@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#FBF3E4">
+<title>เบื้องหลังพิพิธภัณฑ์เด็ก</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@500;600;700&family=Anuphan:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* layout idea: one portrait "phone stage", hand-drawn gouache scenes from the real museum (pink/blue mats, orange hippo tunnel, green floor circle), paper grain over everything */
+:root{
+  --paper:#FBF3E4;
+  --ink:#2E2A3B;
+  --pink:#EF7BA6;
+  --blue:#4A7FD1;
+  --orange:#F2742B;
+  --green:#4AA65A;
+  --yellow:#F6C445;
+  --teal:#2DAFA4;
+  --dusk:#3B3358;
+  --f-display:"Mali","Anuphan",system-ui,sans-serif;
+  --f-body:"Anuphan","Noto Sans Thai",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:#E9DFCC;font-family:var(--f-body);color:var(--ink);overflow:hidden;
+  background-image:radial-gradient(circle at 20% 10%,#F3E9D6 0,transparent 50%),radial-gradient(circle at 80% 90%,#E2D4BC 0,transparent 55%)}
+#app{position:relative;height:100%;max-width:480px;margin:0 auto;background:var(--paper);overflow:hidden;
+  box-shadow:0 0 0 1px rgba(46,42,59,.08),0 30px 80px rgba(46,42,59,.18);user-select:none;-webkit-user-select:none}
+.grain{position:absolute;inset:0;pointer-events:none;z-index:50;mix-blend-mode:multiply;opacity:.35;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .38  0 0 0 0 .3  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;transition:opacity .6s ease}
+.scene.on{opacity:1}
+svg.art{display:block;width:100%;height:100%}
+.ink{stroke:var(--ink);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.ink2{stroke:var(--ink);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+
+/* HUD */
+.hud{position:absolute;top:0;left:0;right:0;z-index:40;display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 14px 0;pointer-events:none}
+.clock{font-family:var(--f-display);font-weight:700;font-size:15px;background:#fff;border:2.5px solid var(--ink);
+  border-radius:999px;padding:3px 12px 3px 8px;display:flex;align-items:center;gap:6px;box-shadow:2px 3px 0 var(--ink);
+  font-variant-numeric:tabular-nums;transition:opacity .4s}
+.clock i{width:14px;height:14px;border-radius:50%;background:var(--yellow);border:2px solid var(--ink);display:block}
+.clock.night i{background:#C9C3F0}
+.dots{display:flex;gap:6px;flex:1}
+.dots b{height:7px;flex:1;max-width:46px;border-radius:9px;background:rgba(46,42,59,.14);border:1.5px solid rgba(46,42,59,.25);transition:background .4s}
+.dots b.done{background:var(--teal);border-color:var(--ink)}
+.dots b.now{background:var(--yellow);border-color:var(--ink)}
+.iconbtn{pointer-events:auto;width:38px;height:38px;border-radius:50%;background:#fff;border:2.5px solid var(--ink);
+  box-shadow:2px 3px 0 var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
+.iconbtn:active{transform:translate(2px,3px);box-shadow:0 0 0 var(--ink)}
+.hud.hide .clock,.hud.hide .dots{opacity:0}
+
+/* text */
+.title{font-family:var(--f-display);font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
+.task{position:absolute;left:14px;right:14px;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:20;
+  background:#fff;border:2.5px solid var(--ink);border-radius:18px;padding:10px 14px 11px;box-shadow:3px 4px 0 var(--ink);
+  display:flex;gap:12px;align-items:center}
+.task .tag{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.02em;color:#fff;background:var(--ink);
+  padding:2px 8px;border-radius:7px;white-space:nowrap;align-self:flex-start;margin-top:2px}
+.task p{margin:0;font-size:16px;line-height:1.4;font-weight:500}
+.task small{display:block;font-size:13px;opacity:.7;font-weight:400;margin-top:1px}
+.count{font-family:var(--f-display);font-weight:700;font-size:20px;margin-left:auto;font-variant-numeric:tabular-nums;white-space:nowrap}
+.btn{font-family:var(--f-display);font-weight:700;font-size:19px;color:var(--ink);background:var(--yellow);border:3px solid var(--ink);
+  border-radius:16px;padding:13px 26px;box-shadow:3px 5px 0 var(--ink);cursor:pointer;transition:transform .08s}
+.btn:active{transform:translate(3px,5px);box-shadow:0 0 0 var(--ink)}
+.btn.alt{background:#fff;font-size:16px;padding:10px 18px}
+.btn:focus-visible,.iconbtn:focus-visible,.skip:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.skip{position:absolute;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:30;font-family:var(--f-body);font-size:13px;
+  background:rgba(255,255,255,.85);border:2px solid rgba(46,42,59,.4);border-radius:999px;padding:5px 12px;color:var(--ink);cursor:pointer}
+.toast{position:absolute;left:50%;z-index:35;transform:translate(-50%,0) scale(.8);opacity:0;pointer-events:none;
+  font-family:var(--f-display);font-weight:700;font-size:17px;background:#fff;border:2.5px solid var(--ink);border-radius:14px;
+  padding:6px 14px;box-shadow:2px 3px 0 var(--ink);white-space:nowrap;transition:all .35s cubic-bezier(.3,1.6,.5,1)}
+.toast.show{opacity:1;transform:translate(-50%,-14px) scale(1)}
+
+/* card / narration */
+.narr{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+  padding:40px 28px;gap:18px;z-index:10}
+.narr .time{font-family:var(--f-display);font-weight:700;font-size:56px;line-height:1;font-variant-numeric:tabular-nums}
+.narr .line{font-family:var(--f-display);font-size:22px;font-weight:600;line-height:1.45;opacity:0;transform:translateY(8px);transition:all .7s ease}
+.narr .line.in{opacity:1;transform:none}
+.tapnext{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 26px);left:0;right:0;text-align:center;font-size:14px;opacity:.6;
+  animation:breathe 1.8s ease-in-out infinite;z-index:12}
+@keyframes breathe{50%{opacity:.25}}
+
+/* ID card */
+.idcard{width:min(300px,82%);background:#fff;border:3px solid var(--ink);border-radius:18px;box-shadow:4px 6px 0 var(--ink);
+  overflow:hidden;text-align:left;transform:rotate(-2deg)}
+.idcard .top{background:var(--teal);color:#fff;padding:9px 14px;font-family:var(--f-display);font-weight:700;font-size:14px;
+  display:flex;justify-content:space-between;border-bottom:3px solid var(--ink)}
+.idcard .body{display:flex;gap:12px;padding:14px}
+.idcard .ph{width:64px;height:76px;border:2.5px solid var(--ink);border-radius:10px;background:#FDE9C9;flex:none;overflow:hidden}
+.idcard label{font-size:12px;opacity:.65;display:block}
+.idcard input{width:100%;font-family:var(--f-display);font-size:20px;font-weight:700;border:none;border-bottom:2.5px dashed var(--ink);
+  background:transparent;padding:2px 0;color:var(--ink);outline:none;border-radius:0}
+.idcard .role{font-size:13px;margin-top:8px}
+.lanyard{width:16px;height:60px;background:var(--orange);border:2.5px solid var(--ink);border-bottom:none;margin:0 auto -4px}
+
+/* dialog bubble */
+.bubble{position:absolute;z-index:22;background:#fff;border:2.5px solid var(--ink);border-radius:18px;padding:9px 14px;
+  font-family:var(--f-display);font-weight:600;font-size:17px;line-height:1.4;box-shadow:2px 3px 0 var(--ink);max-width:78%;
+  transform-origin:bottom center;animation:pop .35s cubic-bezier(.3,1.6,.5,1)}
+.bubble:after{content:"";position:absolute;bottom:-11px;left:var(--tail,50%);width:16px;height:16px;background:#fff;
+  border-right:2.5px solid var(--ink);border-bottom:2.5px solid var(--ink);transform:translateX(-50%) rotate(45deg)}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+
+/* crayons */
+.tray{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 54px);display:flex;justify-content:center;gap:12px;z-index:21}
+.crayon{width:42px;height:118px;touch-action:none;cursor:grab;filter:drop-shadow(2px 3px 0 rgba(46,42,59,.9))}
+.crayon.drag{position:fixed;z-index:60;pointer-events:none;transform:rotate(-15deg) scale(1.1)}
+.palette{display:flex;gap:10px;justify-content:center;padding:10px 0}
+.sw{width:40px;height:40px;border-radius:50%;border:3px solid var(--ink);cursor:pointer;box-shadow:2px 3px 0 var(--ink)}
+.sw.sel{transform:translateY(-6px);box-shadow:2px 8px 0 var(--ink)}
+.paperwrap{position:relative;margin:0 auto;border:3px solid var(--ink);border-radius:6px;background:#fff;box-shadow:4px 6px 0 var(--ink);
+  transform:rotate(-1.2deg);touch-action:none}
+.paperwrap canvas{position:absolute;inset:0;width:100%;height:100%}
+
+/* reveal */
+.rcard{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:70px 24px 90px;text-align:center}
+.rcard .pic{width:min(300px,80vw);aspect-ratio:1;border:3px solid var(--ink);border-radius:20px;overflow:hidden;background:#fff;box-shadow:4px 6px 0 var(--ink);position:relative}
+.rcard .cap{font-family:var(--f-display);font-size:21px;font-weight:600;line-height:1.5;max-width:30ch}
+.rcard .cap em{font-style:normal;background:linear-gradient(transparent 60%,rgba(246,196,69,.7) 60%)}
+.rcard .sub{font-size:15px;opacity:.7;margin-top:-6px}
+.note{position:absolute;font-family:var(--f-display);font-weight:600;color:#C2416F;font-size:22px;line-height:1.3;transform:rotate(-6deg);
+  background:#FFF4B8;border:2.5px solid var(--ink);padding:10px 14px;box-shadow:3px 4px 0 var(--ink);opacity:0;transition:all .8s cubic-bezier(.3,1.4,.5,1)}
+.note.in{opacity:1}
+.sticky{background:#FFF1A8;border:2.5px solid var(--ink);box-shadow:3px 5px 0 var(--ink);padding:18px 18px 16px;width:min(300px,82vw);
+  text-align:left;font-family:var(--f-display);font-size:18px;line-height:1.55;transform:rotate(1.5deg);position:relative}
+.sticky:before{content:"";position:absolute;top:-14px;left:50%;width:84px;height:24px;margin-left:-42px;background:rgba(239,123,166,.55);transform:rotate(-3deg)}
+.sticky .from{text-align:right;font-size:15px;margin-top:8px;opacity:.75}
+
+/* final */
+.final{position:absolute;inset:0;overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 30px) 20px calc(env(safe-area-inset-bottom,0px) + 30px);
+  display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center}
+.wall{position:relative;width:100%;max-width:400px;height:330px;flex:none}
+.polaroid{position:absolute;background:#fff;padding:7px 7px 26px;border:2px solid var(--ink);box-shadow:3px 4px 0 rgba(46,42,59,.85);width:46%}
+.polaroid img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;filter:saturate(1.05) contrast(1.02)}
+.polaroid span{position:absolute;bottom:4px;left:0;right:0;font-family:var(--f-display);font-size:13px;font-weight:600}
+.final p{margin:0;line-height:1.6;max-width:34ch}
+.credit{font-size:12px;opacity:.55}
+.modal{position:absolute;inset:0;z-index:45;background:rgba(46,42,59,.45);display:none;align-items:flex-end;justify-content:center}
+.modal.on{display:flex}
+.sheet{width:100%;background:var(--paper);border-top:3px solid var(--ink);border-radius:22px 22px 0 0;padding:20px 20px calc(env(safe-area-inset-bottom,0px) + 20px);
+  display:flex;flex-direction:column;gap:12px;animation:up .35s ease}
+@keyframes up{from{transform:translateY(100%)}}
+.sheet textarea{font-family:var(--f-display);font-size:19px;line-height:1.5;border:2.5px solid var(--ink);border-radius:14px;padding:12px;min-height:120px;
+  background:#FFF6C4;color:var(--ink);resize:none;outline:none}
+.board{width:100%;max-width:400px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.board .mini{background:#FFF1A8;border:2px solid var(--ink);padding:8px 10px;font-family:var(--f-display);font-size:15px;max-width:180px;box-shadow:2px 3px 0 var(--ink);text-align:left}
+.heart{position:absolute;z-index:46;pointer-events:none;animation:floatup 1.6s ease-out forwards}
+@keyframes floatup{to{transform:translate(var(--dx),-260px) scale(.4) rotate(var(--r));opacity:0}}
+.hand{position:absolute;width:56px;height:56px;pointer-events:none;z-index:25}
+.spark{position:absolute;pointer-events:none;z-index:26;width:10px;height:10px;margin:-5px;background:var(--yellow);border:2px solid var(--ink);border-radius:2px;
+  animation:spark .7s ease-out forwards}
+@keyframes spark{to{transform:translate(var(--dx),var(--dy)) rotate(200deg) scale(.2);opacity:0}}
+@keyframes bob{50%{transform:translateY(-6px)}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.shake{animation:shake .3s 2}
+/* coach (พี่หญิง) */
+.coach{position:absolute;left:12px;right:96px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:31;display:flex;align-items:flex-end;gap:8px;
+  pointer-events:none;opacity:0;transform:translateY(18px);transition:all .45s cubic-bezier(.3,1.4,.5,1)}
+.coach.top{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 142px)}
+.coach.on{opacity:1;transform:none}
+.cav{width:62px;height:62px;flex:none;border-radius:50%;background:#FFF0B8;border:2.5px solid var(--ink);overflow:hidden;box-shadow:2px 3px 0 var(--ink)}
+.cb{background:#fff;border:2.5px solid var(--ink);border-radius:16px 16px 16px 4px;padding:6px 12px 8px;font-family:var(--f-display);font-weight:600;font-size:15px;line-height:1.4;box-shadow:2px 3px 0 var(--ink)}
+.cb b{display:block;font-size:12px;color:#B07D00}
+/* cartoon -> real photo */
+.real{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;filter:blur(10px) sepia(.9) brightness(1.3);transform:scale(1.06);transition:opacity 1.8s ease,filter 2.4s ease,transform 2.4s ease}
+.real.in{opacity:1;filter:none;transform:none}
+.realtag{position:absolute;left:10px;bottom:10px;z-index:2;font-size:12px;font-weight:600;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:2px 10px;
+  opacity:0;transform:translateY(6px);transition:all .6s ease 1.4s}
+.realtag.in{opacity:1;transform:none}
+.quote{font-family:var(--f-display);font-weight:600;font-size:21px;line-height:1.5;max-width:28ch;position:relative;padding:0 10px}
+.quote:before{content:"\201C";position:absolute;left:-14px;top:-18px;font-size:56px;color:var(--orange);line-height:1}
+.choice{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <filter id="wob" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="2" seed="7" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <filter id="soft"><feGaussianBlur stdDeviation="2.4"/></filter>
+      <radialGradient id="ballShine" cx=".35" cy=".3" r=".7"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    </defs>
+  </svg>
+
+  <div class="hud hide" id="hud">
+    <div class="clock" id="clock"><i></i><span id="clockT">07:30</span></div>
+    <div class="dots" id="dots"><b></b><b></b><b></b></div>
+    <button class="iconbtn" id="mute" aria-label="ปิดเสียง">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E2A3B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="#F6C445"/><path id="muteWave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+    </button>
+  </div>
+  <div id="stage"></div>
+  <div class="grain"></div>
+</div>
+
+<script>
+(()=>{
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const stage=$('#stage'), hud=$('#hud');
+const NS='http://www.w3.org/2000/svg';
+const S={name:'',drawing:null};
+const C={ink:'#2E2A3B',pink:'#EF7BA6',blue:'#4A7FD1',orange:'#F2742B',green:'#4AA65A',yellow:'#F6C445',teal:'#2DAFA4',red:'#E5484D',purple:'#8A63C9'};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
+const rnd=(a,b)=>a+Math.random()*(b-a);
+
+/* ---------------- audio ---------------- */
+const A={ctx:null,master:null,muted:false,musicOn:false,step:0,next:0,tempo:96,mood:'day',timer:null};
+function audioInit(){
+  if(A.ctx)return;
+  try{
+    A.ctx=new (window.AudioContext||window.webkitAudioContext)();
+    A.master=A.ctx.createGain();A.master.gain.value=.9;A.master.connect(A.ctx.destination);
+    A.music=A.ctx.createGain();A.music.gain.value=.0;A.music.connect(A.master);
+    A.lp=A.ctx.createBiquadFilter();A.lp.type='lowpass';A.lp.frequency.value=5000;A.lp.connect(A.music);
+    const len=A.ctx.sampleRate*2,b=A.ctx.createBuffer(1,len,A.ctx.sampleRate),d=b.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=Math.random()*2-1;A.noise=b;
+  }catch(e){A.ctx=null}
+}
+function tone(f,t,dur,vol,type='sine',dest){
+  if(!A.ctx)return;const o=A.ctx.createOscillator(),g=A.ctx.createGain();
+  o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(dest||A.master);o.start(t);o.stop(t+dur+.05);
+}
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+const SFX={
+  pop(p=0){if(!A.ctx)return;const t=A.ctx.currentTime;tone(mtof(72+p),t,.18,.18,'triangle');tone(mtof(79+p),t+.04,.14,.08,'sine')},
+  plop(i=0){if(!A.ctx)return;const t=A.ctx.currentTime,o=A.ctx.createOscillator(),g=A.ctx.createGain();
+    o.frequency.setValueAtTime(mtof(67+[0,2,4,7,9,12,14][i%7]),t);o.frequency.exponentialRampToValueAtTime(mtof(55+[0,2,4,7,9,12,14][i%7]),t+.15);
+    g.gain.setValueAtTime(.25,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.connect(g);g.connect(A.master);o.start(t);o.stop(t+.25)},
+  sparkle(){if(!A.ctx)return;const t=A.ctx.currentTime;[84,88,91,96].forEach((m,i)=>tone(mtof(m),t+i*.06,.4,.07,'sine'))},
+  chime(){if(!A.ctx)return;const t=A.ctx.currentTime;tone(mtof(76),t,1.2,.16,'sine');tone(mtof(72),t+.45,1.4,.16,'sine')},
+  soft(){if(!A.ctx)return;const t=A.ctx.currentTime;tone(220,t,.12,.06,'sine')},
+  click(){if(!A.ctx)return;const t=A.ctx.currentTime;tone(1200,t,.03,.08,'square');tone(90,t+.02,.25,.12,'sine')},
+  win(){if(!A.ctx)return;const t=A.ctx.currentTime;[72,76,79,84].forEach((m,i)=>{tone(mtof(m),t+i*.09,.5,.1,'triangle')})},
+  sob(){if(!A.ctx)return;const t=A.ctx.currentTime,o=A.ctx.createOscillator(),g=A.ctx.createGain();o.type='sine';
+    o.frequency.setValueAtTime(520,t);o.frequency.linearRampToValueAtTime(380,t+.35);g.gain.setValueAtTime(.0,t);g.gain.linearRampToValueAtTime(.05,t+.05);g.gain.linearRampToValueAtTime(0,t+.4);
+    o.connect(g);g.connect(A.master);o.start(t);o.stop(t+.45)}
+};
+let squeak=null;
+function squeakStart(){if(!A.ctx||squeak)return;const s=A.ctx.createBufferSource();s.buffer=A.noise;s.loop=true;
+  const f=A.ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=2400;f.Q.value=2.5;const g=A.ctx.createGain();g.gain.value=0;
+  s.connect(f);f.connect(g);g.connect(A.master);s.start();squeak={s,f,g}}
+function squeakSet(v){if(!squeak)return;const t=A.ctx.currentTime;squeak.g.gain.setTargetAtTime(Math.min(.09,v),t,.04);squeak.f.frequency.setTargetAtTime(1800+v*9000,t,.05)}
+function squeakStop(){if(!squeak)return;const q=squeak;squeak=null;q.g.gain.setTargetAtTime(0,A.ctx.currentTime,.05);setTimeout(()=>{try{q.s.stop()}catch(e){}},300)}
+
+/* music box: I–vi–IV–V arpeggios in C, gentle */
+const PROG=[[60,64,67,72],[57,60,64,69],[53,57,60,65],[55,59,62,67]];
+const MEL=[76,null,79,null,77,76,74,null,72,null,74,76,null,74,72,null, 69,null,72,null,74,null,76,null,74,72,null,69,67,null,null,null];
+function musicStart(){if(!A.ctx||A.musicOn)return;A.musicOn=true;A.next=A.ctx.currentTime+.1;A.music.gain.setTargetAtTime(.55,A.ctx.currentTime,1);
+  A.timer=setInterval(()=>{while(A.next<A.ctx.currentTime+.15){schedule(A.step,A.next);A.next+=60/A.tempo/2;A.step++}},30)}
+function schedule(step,t){
+  const bar=Math.floor(step/8)%4,ch=PROG[bar],i=step%8;
+  const arp=[0,1,2,3,2,1,2,1][i];const night=A.mood==='night';
+  tone(mtof(ch[arp]+(night?-12:0)),t,night?1.4:.9,.05,'triangle',A.lp);
+  if(i===0)tone(mtof(ch[0]-12),t,1.8,.06,'sine',A.lp);
+  const m=MEL[step%32];if(m&&!night)tone(mtof(m),t,1.1,.045,'sine',A.lp);
+  if(m&&night&&step%2===0)tone(mtof(m-12),t,1.6,.035,'sine',A.lp);
+}
+function setMood(m){A.mood=m;if(!A.ctx)return;A.tempo=m==='night'?72:m==='warm'?84:96;A.lp.frequency.setTargetAtTime(m==='night'?1400:m==='warm'?3000:5000,A.ctx.currentTime,1)}
+$('#mute').addEventListener('click',()=>{audioInit();A.muted=!A.muted;if(A.master)A.master.gain.value=A.muted?0:.9;
+  $('#muteWave').style.opacity=A.muted?.15:1;$('#mute').setAttribute('aria-label',A.muted?'เปิดเสียง':'ปิดเสียง')});
+
+/* ---------------- helpers ---------------- */
+function el(tag,attrs={},html){const e=document.createElement(tag);for(const k in attrs){if(k==='style')e.style.cssText=attrs[k];else e.setAttribute(k,attrs[k])}if(html!=null)e.innerHTML=html;return e}
+function svgPt(svg,e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
+function setClock(t,night){$('#clockT').textContent=t;$('#clock').classList.toggle('night',!!night)}
+function setDots(n){[...$('#dots').children].forEach((b,i)=>{b.className=i<n?'done':i===n?'now':''})}
+function toast(scene,text,y){const t=el('div',{class:'toast',style:`top:${y}px`},text);scene.appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400)},1400)}
+function sparks(scene,x,y,n=12,colors=[C.yellow,C.pink,C.teal,C.blue]){
+  for(let i=0;i<n;i++){const s=el('div',{class:'spark'});const a=Math.random()*Math.PI*2,d=rnd(40,90);
+    s.style.cssText=`left:${x}px;top:${y}px;--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d}px;background:${colors[i%colors.length]};border-radius:${i%2?'50%':'2px'}`;
+    scene.appendChild(s);setTimeout(()=>s.remove(),800)}}
+function relPos(scene,clientX,clientY){const r=scene.getBoundingClientRect();return[clientX-r.left,clientY-r.top]}
+let current=null;
+async function go(fn){
+  if(current){const old=current;old.classList.remove('on');setTimeout(()=>old.remove(),650);await sleep(350)}
+  const sc=el('div',{class:'scene'});stage.appendChild(sc);current=sc;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>sc.classList.add('on')));
+  fn(sc);
+}
+function skipBtn(sc,label,cb){const b=el('button',{class:'skip'},label||'ข้าม ›');b.addEventListener('click',()=>{b.remove();cb()},{once:true});sc.appendChild(b);return b}
+function waitTap(sc){return new Promise(r=>{const h=()=>{sc.removeEventListener('pointerup',h);r()};setTimeout(()=>sc.addEventListener('pointerup',h),400)})}
+const HAND=`<svg viewBox="0 0 56 56"><path d="M20 30V12a4 4 0 0 1 8 0v14l2-1a4 4 0 0 1 5 2l1 1a4 4 0 0 1 5 2v1a4 4 0 0 1 5 3v6c0 8-6 13-13 13h-3c-5 0-8-2-11-6l-7-9a4 4 0 0 1 6-5z" fill="#fff" stroke="#2E2A3B" stroke-width="3" stroke-linejoin="round"/></svg>`;
+
+/* ---------------- art pieces ---------------- */
+function mewSVG(){ // returns markup of the girl, origin centered ~ (0,0) at face center
+  return `<g class="mew">
+   <ellipse cx="0" cy="-6" rx="54" ry="52" fill="#3A2A2E" class="ink"/>
+   <circle cx="-56" cy="10" r="15" fill="#3A2A2E" class="ink"/><circle cx="56" cy="10" r="15" fill="#3A2A2E" class="ink"/>
+   <circle cx="-47" cy="-2" r="6" fill="${C.pink}" class="ink2"/><circle cx="47" cy="-2" r="6" fill="${C.pink}" class="ink2"/>
+   <path d="M-62 140 Q-58 66 0 58 Q58 66 62 140 Z" fill="${C.yellow}" class="ink"/>
+   <path d="M-16 60 Q0 76 16 60" fill="none" class="ink2"/>
+   <circle cx="0" cy="6" r="44" fill="#F5CFAE" class="ink"/>
+   <path d="M-44 -2 Q-38 -46 0 -46 Q38 -46 44 -2 Q30 -18 18 -12 Q8 -22 -4 -12 Q-18 -22 -30 -10 Q-38 -10 -44 -2Z" fill="#3A2A2E" class="ink2"/>
+   <g class="blush"><ellipse cx="-26" cy="20" rx="8" ry="5" fill="${C.pink}" opacity=".55"/><ellipse cx="26" cy="20" rx="8" ry="5" fill="${C.pink}" opacity=".55"/></g>
+   <g class="cry">
+     <path d="M-24 4 Q-16 10 -8 4" fill="none" class="ink"/><path d="M8 4 Q16 10 24 4" fill="none" class="ink"/>
+     <path d="M-10 -6 L-22 -10 M10 -6 L22 -10" class="ink2"/>
+     <path d="M-10 32 Q0 24 10 32" fill="none" class="ink"/>
+     <path class="tear" d="M-20 12 q-4 8 0 12 q4 -4 0 -12z" fill="#8FC7F0" stroke="#2E2A3B" stroke-width="1.6"/>
+     <path class="tear t2" d="M20 12 q-4 8 0 12 q4 -4 0 -12z" fill="#8FC7F0" stroke="#2E2A3B" stroke-width="1.6"/>
+   </g>
+   <g class="happy" style="display:none">
+     <path d="M-24 8 Q-16 -2 -8 8" fill="none" class="ink"/><path d="M8 8 Q16 -2 24 8" fill="none" class="ink"/>
+     <path d="M-12 24 Q0 40 12 24 Z" fill="#B8434F" class="ink2"/>
+   </g>
+   <g class="calm" style="display:none">
+     <circle cx="-15" cy="6" r="4" fill="#2E2A3B"/><circle cx="15" cy="6" r="4" fill="#2E2A3B"/>
+     <circle cx="-13.5" cy="4.5" r="1.3" fill="#fff"/><circle cx="16.5" cy="4.5" r="1.3" fill="#fff"/>
+     <path d="M-6 26 Q0 31 6 26" fill="none" class="ink2"/>
+   </g>
+  </g>`;
+}
+function yingSVG(old){ // พี่หญิง: shoulder-length dark hair, yellow blouse, warm smile
+  return `<g class="ying">
+   <path d="M-50 -6 Q-54 -58 0 -56 Q54 -58 50 -6 L52 52 Q30 62 0 60 Q-30 62 -52 52Z" fill="#2B2024" class="ink"/>
+   <path d="M-64 140 Q-60 70 0 62 Q60 70 64 140Z" fill="#F4D65E" class="ink"/>
+   <path d="M-20 62 L0 92 L20 62" fill="#E8C33C" class="ink2"/><path d="M-9 62 L0 76 L9 62Z" fill="#D9A07C"/>
+   <circle cx="0" cy="4" r="42" fill="#D9A07C" class="ink"/>
+   <path d="M-44 4 Q-46 -46 6 -46 Q44 -44 46 4 Q40 -22 18 -28 Q2 -18 -14 -26 Q-30 -20 -44 4Z" fill="#2B2024" class="ink2"/>
+   ${old?'<path d="M10 -44 Q26 -38 34 -20" stroke="#C9C3BE" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M-30 -2 q4 3 8 0 M22 -2 q4 3 8 0" stroke="#2E2A3B" stroke-width="1.4" fill="none" opacity=".5"/>':''}
+   <circle cx="-41" cy="20" r="3.5" fill="${C.yellow}" class="ink2"/><circle cx="41" cy="20" r="3.5" fill="${C.yellow}" class="ink2"/>
+   <path d="M-25 6 Q-17 -3 -9 6" fill="none" class="ink"/><path d="M9 6 Q17 -3 25 6" fill="none" class="ink"/>
+   <ellipse cx="-26" cy="18" rx="7" ry="4" fill="#E86A7A" opacity=".45"/><ellipse cx="26" cy="18" rx="7" ry="4" fill="#E86A7A" opacity=".45"/>
+   <path d="M-13 22 Q0 36 13 22 Z" fill="#fff" class="ink2"/>
+  </g>`;
+}
+function grownMewSVG(){ // มิว 10 ปีต่อมา
+  return `<g>
+   <path d="M-48 -8 Q-52 -60 0 -56 Q52 -60 48 -8 L52 96 Q0 104 -52 96Z" fill="#3A2A2E" class="ink"/>
+   <path d="M-62 150 Q-58 72 0 64 Q58 72 62 150Z" fill="${C.orange}" class="ink"/>
+   <rect x="-10" y="44" width="20" height="22" fill="#F5CFAE" class="ink2"/>
+   <circle cx="0" cy="4" r="40" fill="#F5CFAE" class="ink"/>
+   <path d="M-42 0 Q-40 -46 0 -46 Q40 -46 42 0 Q34 -16 24 -14 L22 -22 Q6 -12 -8 -20 Q-24 -12 -42 0Z" fill="#3A2A2E" class="ink2"/>
+   <path d="M-24 8 Q-16 -2 -8 8" fill="none" class="ink"/><path d="M8 8 Q16 -2 24 8" fill="none" class="ink"/>
+   <ellipse cx="-25" cy="20" rx="7" ry="4" fill="${C.pink}" opacity=".55"/><ellipse cx="25" cy="20" rx="7" ry="4" fill="${C.pink}" opacity=".55"/>
+   <path d="M-10 24 Q0 34 10 24" fill="none" class="ink"/>
+  </g>`;
+}
+function coach(sc,text,ms=4200,pos){let c=sc.querySelector('.coach');
+  if(!c){c=el('div',{class:'coach','aria-live':'polite'},`<div class="cav"><svg viewBox="-60 -54 120 120" width="100%" height="100%">${yingSVG()}</svg></div><div class="cb"></div>`);sc.appendChild(c)}
+  c.classList.toggle('top',pos==='top');c.querySelector('.cb').innerHTML='<b>พี่หญิง</b>'+text;c.classList.remove('on');void c.offsetWidth;c.classList.add('on');SFX.pop(9);
+  clearTimeout(c._t);c._t=setTimeout(()=>c.classList.remove('on'),ms)}
+function musicTo(v,sec=1){if(A.ctx&&A.music)A.music.gain.setTargetAtTime(v,A.ctx.currentTime,sec/3)}
+function mewFace(svg,state){['cry','happy','calm'].forEach(s=>{const g=svg.querySelector('.'+s);if(g)g.style.display=s===state?'':'none'})}
+function ballMarkup(cx,cy,r,col,extra=''){return `<g ${extra}><circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" class="ink2"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#ballShine)"/><ellipse cx="${cx-r*.35}" cy="${cy-r*.4}" rx="${r*.22}" ry="${r*.13}" fill="#fff" opacity=".8" transform="rotate(-30 ${cx-r*.35} ${cy-r*.4})"/></g>`}
+const BALLC=[C.red,C.yellow,C.blue,C.green,C.pink,C.orange,C.purple];
+function ballPit(w,h,y0,seed=1,count=90){let s='',k=seed;const r=()=>{k=(k*9301+49297)%233280;return k/233280};
+  for(let i=0;i<count;i++){const y=y0+Math.pow(r(),.7)*(h-y0)+10,rad=10+(y-y0)/(h-y0)*22;s+=ballMarkup(r()*w,y,rad,BALLC[Math.floor(r()*7)])}return s}
+
+/* building for title (based on the real blue drum facade) */
+function titleArt(){return `
+<svg class="art" viewBox="0 0 390 520" preserveAspectRatio="xMidYMax slice">
+ <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9FD3EE"/><stop offset=".7" stop-color="#FDE3C2"/><stop offset="1" stop-color="#FBD0A8"/></linearGradient></defs>
+ <rect width="390" height="520" fill="url(#sky)"/>
+ <g filter="url(#wob)">
+  <circle cx="345" cy="212" r="26" fill="${C.yellow}" class="ink"/>
+  <path d="M8 222 q16 -18 36 -6 q12 -13 28 -2 q14 3 8 14 h-72z" fill="#fff" class="ink2"/>
+  <rect x="-10" y="250" width="410" height="200" fill="#F4EFE6" class="ink"/>
+  <rect x="20" y="280" width="60" height="44" fill="#BFE0F2" class="ink2"/><rect x="310" y="280" width="60" height="44" fill="#BFE0F2" class="ink2"/>
+  <path d="M20 302 h60 M50 280 v44 M310 302 h60 M340 280 v44" class="ink2"/>
+  <path d="M95 200 Q195 160 295 200 V330 Q195 300 95 330 Z" fill="#2E66B5" class="ink"/>
+  <path d="M95 200 Q195 160 295 200 V214 Q195 176 95 214 Z" fill="#5B8FD6"/>
+  <circle cx="195" cy="228" r="13" fill="#fff" class="ink2"/><path d="M190 228 l5 -6 l5 6 l-5 6z" fill="${C.yellow}"/>
+  <rect x="140" y="250" width="110" height="7" rx="3.5" fill="#fff" opacity=".9"/><rect x="155" y="264" width="80" height="5" rx="2.5" fill="#fff" opacity=".6"/>
+  <path d="M95 330 Q195 300 295 330 V346 H95Z" fill="#fff" class="ink2"/>
+  <rect x="112" y="346" width="16" height="104" fill="#fff" class="ink2"/><rect x="170" y="346" width="16" height="104" fill="#fff" class="ink2"/>
+  <rect x="206" y="346" width="16" height="104" fill="#fff" class="ink2"/><rect x="262" y="346" width="16" height="104" fill="#fff" class="ink2"/>
+  <rect x="140" y="380" width="22" height="70" fill="#8AC9E8" class="ink2"/><rect x="230" y="380" width="22" height="70" fill="#8AC9E8" class="ink2"/>
+  <rect x="-10" y="446" width="410" height="80" fill="#D9CFC0" class="ink"/>
+  <path d="M0 470 h390 M0 494 h390" stroke="#C4B8A6" stroke-width="2"/>
+  <g><circle cx="38" cy="420" r="26" fill="${C.green}" class="ink2"/><circle cx="62" cy="430" r="20" fill="#3E9150" class="ink2"/><circle cx="352" cy="424" r="24" fill="${C.green}" class="ink2"/></g>
+ </g>
+</svg>`}
+
+/* ============== SCENE 0: title ============== */
+function sceneTitle(sc){
+  hud.classList.add('hide');
+  sc.style.background='#FDE3C2';
+  sc.innerHTML=`<div style="flex:1;position:relative">${titleArt()}</div>
+   <div style="position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 54px);padding:0 26px;text-align:center">
+     <div style="font-size:14px;font-weight:600;letter-spacing:.08em;opacity:.7">BEHIND THE CHILDREN'S MUSEUM</div>
+     <h1 class="title" style="font-size:46px;margin-top:6px">เบื้องหลัง<br>พิพิธภัณฑ์เด็ก</h1>
+     <p style="margin:10px auto 0;font-size:16px;line-height:1.5;max-width:26ch">หนึ่งวันของพี่เจ้าหน้าที่ ตั้งแต่ก่อนประตูเปิด จนไฟดวงสุดท้ายดับ</p>
+   </div>
+   <div style="position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 28px);display:flex;flex-direction:column;align-items:center;gap:10px">
+     <button class="btn" id="start">เริ่มกะเช้า</button>
+     <div style="font-size:13px;opacity:.75">ใช้เวลาราว 4 นาที · เปิดเสียงจะดีที่สุด</div>
+   </div>`;
+  $('#start',sc).addEventListener('click',()=>{audioInit();if(A.ctx&&A.ctx.state==='suspended')A.ctx.resume();musicStart();SFX.pop();go(sceneBadge)},{once:true});
+}
+
+/* ============== SCENE 1: staff badge ============== */
+function sceneBadge(sc){
+  sc.style.background=C.teal;
+  sc.innerHTML=`<div class="narr" style="color:#fff">
+    <div class="line in" style="font-size:18px">วันแรกของการทำงาน</div>
+    <div><div class="lanyard"></div>
+    <div class="idcard" style="color:var(--ink)">
+      <div class="top"><span>บัตรเจ้าหน้าที่</span><span>STAFF</span></div>
+      <div class="body">
+        <div class="ph"><svg viewBox="0 0 64 76" width="100%" height="100%"><circle cx="32" cy="30" r="14" fill="#F5CFAE" stroke="#2E2A3B" stroke-width="2.4"/><path d="M18 26 Q20 12 32 12 Q46 12 46 26 Q40 20 32 21 Q24 20 18 26Z" fill="#3A2A2E"/><path d="M8 76 Q10 50 32 48 Q54 50 56 76" fill="${C.orange}" stroke="#2E2A3B" stroke-width="2.4"/></svg></div>
+        <div style="flex:1;min-width:0"><label for="nm">ชื่อเล่น</label><input id="nm" maxlength="12" placeholder="พิมพ์ชื่อคุณ" autocomplete="off">
+          <div class="role">ฝ่ายดูแลกิจกรรมเด็ก</div></div>
+      </div>
+    </div></div>
+    <p style="margin:0;font-size:16px;line-height:1.55;max-width:28ch;opacity:.95">เด็กๆ จะเรียกคุณด้วยชื่อนี้</p>
+    <button class="btn" id="ok">ติดบัตร แล้วไปทำงาน</button>
+  </div>`;
+  const inp=$('#nm',sc);
+  $('#ok',sc).addEventListener('click',()=>{S.name=inp.value.trim();inp.blur();SFX.pop(5);buzz(10);go(sceneChild)});
+}
+
+/* ============== SCENE 1b: childhood question ============== */
+function sceneChild(sc){
+  sc.style.background='#FFF6E3';
+  sc.innerHTML=`<div class="narr">
+    <div style="font-size:15px;opacity:.65">ก่อนเริ่มงาน ขอถามหน่อย</div>
+    <h2 class="title" style="font-size:27px;max-width:15em">ตอนเด็กๆ คุณเคยไป<br>พิพิธภัณฑ์เด็ก สวนสนุก<br>หรือห้องสมุดไหม?</h2>
+    <div class="choice"><button class="btn" data-v="1">เคยไป</button><button class="btn alt" data-v="0" style="font-size:19px;padding:13px 22px">จำไม่ได้แล้ว</button></div>
+    <div style="font-size:14px;opacity:.6">ไม่มีคำตอบผิด</div></div>`;
+  sc.querySelectorAll('[data-v]').forEach(b=>b.addEventListener('click',()=>{S.child=b.dataset.v==='1';SFX.pop(3);go(sceneMorning)},{once:true}));
+}
+
+/* ============== SCENE 2: morning narration ============== */
+async function sceneMorning(sc){
+  hud.classList.remove('hide');setClock('07:30');setDots(0);
+  sc.style.background='#FFF6E3';
+  sc.innerHTML=`<div style="position:absolute;inset:0;opacity:.9"><svg class="art" viewBox="0 0 390 700" preserveAspectRatio="xMidYMid slice"><g filter="url(#wob)">${ballPit(390,700,470,3,70)}</g></svg></div>
+   <div class="narr"><div class="time">07:30</div>
+   <div class="line" id="l1">พิพิธภัณฑ์ยังเงียบ</div>
+   <div class="line" id="l2">อีกชั่วโมงครึ่ง เด็กๆ จะวิ่งเข้ามา<br>ทุกอย่างต้องพร้อมก่อนนั้น</div></div>
+   <div class="tapnext">แตะเพื่อไปต่อ</div>`;
+  await sleep(500);$('#l1',sc).classList.add('in');await sleep(1100);$('#l2',sc).classList.add('in');
+  await sleep(700);coach(sc,'สวัสดีจ้ะ พี่หญิงเอง วันนี้ตามพี่มานะ เดี๋ยวพี่สอนงานให้',6000,'top');
+  await waitTap(sc);SFX.pop();go(sceneWipe);
+}
+
+/* ============== SCENE 3: wipe balls ============== */
+function sceneWipe(sc){
+  setClock('07:40');
+  sc.style.background='#FFF6E3';
+  sc.innerHTML=`<div style="position:absolute;inset:0"><svg class="art" viewBox="0 0 390 760" preserveAspectRatio="xMidYMax slice">
+      <rect width="390" height="760" fill="#DCE6EE"/><rect y="0" width="390" height="40" fill="#C9D3DC"/>
+      <g filter="url(#wob)"><rect x="-10" y="420" width="410" height="360" fill="#7FB3E3" class="ink"/>
+      <g opacity=".95">${ballPit(390,780,430,11,120)}</g></g></svg></div>
+    <div class="task"><span class="tag">ก่อนเปิด</span><p>เช็ดลูกบอลให้สะอาด<small>ลากนิ้วถูไปมาบนลูกบอล</small></p><span class="count" id="cnt">0/2</span></div>
+    <div id="ballBox" style="position:absolute;left:50%;top:48%;width:min(270px,70vw);aspect-ratio:1;transform:translate(-50%,-50%);touch-action:none">
+      <svg viewBox="0 0 270 270" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible" id="ballSvg"></svg>
+      <canvas id="dirt" width="270" height="270" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+    </div>
+    <div id="cloth" style="position:absolute;width:96px;height:80px;pointer-events:none;z-index:24;margin:-40px 0 0 -48px;transition:transform .15s">
+      <svg viewBox="0 0 96 80"><path d="M8 18 Q30 4 52 12 Q76 4 90 16 L86 62 Q64 74 44 66 Q22 76 6 64Z" fill="#7CC6E6" stroke="#2E2A3B" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M14 26 Q48 18 84 26 M12 40 Q48 32 86 40 M10 54 Q48 46 86 54" stroke="#fff" stroke-width="2.4" fill="none" opacity=".7"/></svg></div>`;
+  const box=$('#ballBox',sc),cv=$('#dirt',sc),ctx=cv.getContext('2d'),bsvg=$('#ballSvg',sc),cloth=$('#cloth',sc);
+  let ballIdx=0,done=false,total=0,moves=0,last=null,hint;
+  const cols=[C.red,C.yellow];
+  function setupBall(){
+    bsvg.innerHTML=`<g filter="url(#wob)" id="bg">${ballMarkup(135,135,118,cols[ballIdx])}</g>`;
+    ctx.globalCompositeOperation='source-over';ctx.clearRect(0,0,270,270);
+    ctx.save();ctx.beginPath();ctx.arc(135,135,117,0,Math.PI*2);ctx.clip();
+    ctx.fillStyle='rgba(120,98,72,.42)';ctx.fillRect(0,0,270,270);
+    for(let i=0;i<26;i++){const x=rnd(20,250),y=rnd(20,250),r=rnd(10,34);const g=ctx.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,'rgba(92,70,48,.75)');g.addColorStop(1,'rgba(92,70,48,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill()}
+    ctx.strokeStyle='rgba(80,60,42,.55)';ctx.lineWidth=1.6;
+    for(let f=0;f<3;f++){const x=rnd(60,210),y=rnd(60,210);for(let k=0;k<6;k++){ctx.beginPath();ctx.ellipse(x,y,6+k*3.2,8+k*4,rnd(0,1),0,Math.PI*1.7);ctx.stroke()}}
+    for(let i=0;i<220;i++){ctx.fillStyle=`rgba(70,52,36,${rnd(.3,.8)})`;ctx.fillRect(rnd(0,270),rnd(0,270),rnd(1,3),rnd(1,3))}
+    ctx.restore();
+    total=countDirt();
+  }
+  function countDirt(){const d=ctx.getImageData(0,0,270,270).data;let n=0;for(let i=3;i<d.length;i+=16)if(d[i]>24)n++;return n}
+  function toLocal(e){const r=box.getBoundingClientRect();return[(e.clientX-r.left)/r.width*270,(e.clientY-r.top)/r.height*270]}
+  function placeCloth(e){const[x,y]=relPos(sc,e.clientX,e.clientY);cloth.style.left=x+'px';cloth.style.top=y+'px'}
+  function idleCloth(){const r=box.getBoundingClientRect(),s=sc.getBoundingClientRect();cloth.style.left=(r.right-s.left-10)+'px';cloth.style.top=(r.bottom-s.top-10)+'px'}
+  // tutorial hand
+  const hand=el('div',{class:'hand'},HAND);sc.appendChild(hand);
+  function animHand(){const r=box.getBoundingClientRect(),s=sc.getBoundingClientRect();let t=0;
+    hint=setInterval(()=>{t+=.05;hand.style.left=(r.left-s.left+r.width*(.5+Math.sin(t*2)*.28)-14)+'px';hand.style.top=(r.top-s.top+r.height*(.5+Math.sin(t*4)*.1))+'px'},30)}
+  setupBall();requestAnimationFrame(()=>{idleCloth();animHand()});
+  setTimeout(()=>coach(sc,'เช็ดตรงรอยนิ้วด้วยนะ เด็กเล็กชอบเอาบอลเข้าปาก',4500),700);
+  box.addEventListener('pointerdown',e=>{if(done)return;box.setPointerCapture(e.pointerId);last=toLocal(e);placeCloth(e);cloth.style.transform='rotate(-8deg) scale(1.05)';
+    if(hand){clearInterval(hint);hand.remove()}squeakStart()});
+  box.addEventListener('pointermove',e=>{if(done||!last)return;const p=toLocal(e);placeCloth(e);
+    ctx.globalCompositeOperation='destination-out';ctx.lineCap='round';ctx.lineWidth=58;ctx.beginPath();ctx.moveTo(last[0],last[1]);ctx.lineTo(p[0],p[1]);ctx.stroke();
+    const sp=Math.hypot(p[0]-last[0],p[1]-last[1]);squeakSet(sp/220);last=p;
+    cloth.style.transform=`rotate(${-8+Math.sin(Date.now()/60)*6}deg) scale(1.05)`;
+    if(++moves%8===0){const left=countDirt()/total;if(left<.12)cleanDone()}});
+  const up=()=>{last=null;squeakStop();cloth.style.transform='';};
+  box.addEventListener('pointerup',up);box.addEventListener('pointercancel',up);
+  async function cleanDone(){
+    done=true;up();ctx.globalCompositeOperation='source-over';
+    cv.style.transition='opacity .4s';cv.style.opacity=0;SFX.sparkle();buzz(20);
+    const r=box.getBoundingClientRect(),s=sc.getBoundingClientRect();sparks(sc,r.left-s.left+r.width/2,r.top-s.top+r.height/2,16);
+    box.animate([{transform:'translate(-50%,-50%) scale(1)'},{transform:'translate(-50%,-56%) scale(1.06)'},{transform:'translate(-50%,-50%) scale(1)'}],{duration:500,easing:'cubic-bezier(.3,1.6,.5,1)'});
+    ballIdx++;$('#cnt',sc).textContent=ballIdx+'/2';
+    toast(sc,ballIdx===1?'เงาวับ!':'อีกลูกก็สะอาดแล้ว',r.top-s.top-6);
+    await sleep(1100);
+    if(ballIdx<2){cv.style.transition='none';cv.style.opacity=1;setupBall();done=false;idleCloth();coach(sc,'เก่งมาก! ลูกต่อไปเลย',2600);return}
+    finish();
+  }
+  async function finish(){
+    skip.remove();
+    const o=el('div',{class:'narr',style:'background:rgba(255,246,227,.94);opacity:0;transition:opacity .5s'},
+      `<div class="title" style="font-size:52px;font-variant-numeric:tabular-nums">2 <span style="font-size:22px">จาก</span> 1,200</div>
+       <div class="line in">บ่อบอลมีลูกบอลราวพันกว่าลูก<br>พี่ๆ ผลัดกันเช็ดทุกลูก ทุกเช้า</div>
+       <div class="line in" style="font-size:17px;opacity:.75">ไม่มีใครเห็นตอนพี่เช็ด<br>แต่เด็กทุกคนได้เล่นของที่สะอาด</div>`);
+    sc.appendChild(o);requestAnimationFrame(()=>o.style.opacity=1);
+    const t=el('div',{class:'tapnext'},'แตะเพื่อไปต่อ');sc.appendChild(t);
+    await waitTap(sc);SFX.pop();go(sceneSafety);
+  }
+  const skip=skipBtn(sc,'ข้าม ›',()=>{done=true;finish()});
+}
+
+/* ============== SCENE 4: safety check ============== */
+function playArea(){ // soft play based on the real Kids Happy Land
+  const vx=195,vy=150;let mats='';
+  const rows=[300,326,356,392,436,490,560,640];
+  for(let r=0;r<rows.length-1;r++){const y0=rows[r],y1=rows[r+1];
+    for(let c=-8;c<8;c++){const s0=(y0-vy)/150,s1=(y1-vy)/150,w=46;
+      const p=[[vx+c*w*s0,y0],[vx+(c+1)*w*s0,y0],[vx+(c+1)*w*s1,y1],[vx+c*w*s1,y1]];
+      mats+=`<path d="M${p.map(q=>q.join(' ')).join('L')}Z" fill="${(r+c)%2?C.pink:C.blue}" stroke="#2E2A3B" stroke-opacity=".25" stroke-width="1.5"/>`}}
+  let fence='';for(let x=-6;x<400;x+=24){if(x===282)continue;fence+=`<path d="M${x} 596 v-62 l8 -10 l8 10 v62z" fill="#fff" class="ink2"/>`}
+  return `<svg class="art" id="play" viewBox="0 0 390 640" preserveAspectRatio="xMidYMax slice">
+   <rect width="390" height="320" fill="#E3E8EC"/>
+   <g filter="url(#wob)">
+    <path d="M0 22 H390 M0 44 H390" stroke="#BCC6CF" stroke-width="6"/>
+    
+    <rect x="20" y="120" width="350" height="170" fill="#BFE3F1" class="ink2"/>
+    <path d="M20 205 Q80 170 140 200 T260 196 T370 190 V290 H20Z" fill="#9BD08E"/>
+    <path d="M107 120 v170 M195 120 v170 M283 120 v170" stroke="#fff" stroke-width="7"/><rect x="20" y="120" width="350" height="170" fill="none" class="ink2"/>
+    <path d="M250 150 q14 -14 30 -2 q14 -8 22 4 q8 2 4 10 h-58z" fill="#fff" class="ink2" opacity=".95"/>
+    <rect x="-10" y="288" width="410" height="16" fill="#C4CCD3" class="ink2"/>
+   </g>
+   ${mats}
+   <g filter="url(#wob)">
+    <rect x="40" y="250" width="10" height="150" fill="#fff" class="ink2"/><rect x="138" y="250" width="10" height="150" fill="#fff" class="ink2"/>
+    <path d="M20 256 L94 176 L168 256Z" fill="#53B54F" class="ink"/><path d="M38 244 L94 186 L150 244" fill="none" stroke="#3E9150" stroke-width="4"/>
+    <circle cx="70" cy="234" r="6" fill="${C.red}"/><circle cx="118" cy="234" r="6" fill="${C.red}"/>
+    <rect x="58" y="270" width="72" height="80" rx="8" fill="${C.purple}" class="ink2"/><circle cx="94" cy="306" r="18" fill="#F3E3A4" class="ink2"/>
+    <rect x="44" y="350" width="104" height="14" fill="${C.yellow}" class="ink2"/>
+    <path d="M140 356 C190 360 196 420 240 432 L258 444 L246 460 L226 450 C178 436 170 384 132 372Z" fill="${C.pink}" class="ink"/>
+    <path d="M146 364 C186 370 190 418 236 438" fill="none" stroke="#fff" stroke-width="3" opacity=".6"/>
+    <g id="screw"><circle cx="178" cy="384" r="8" fill="#B9BEC6" class="ink2"/><path d="M173 380 l10 8 M183 380 l-10 8" stroke="#2E2A3B" stroke-width="2"/><path d="M182 377 l6 -9" stroke="#2E2A3B" stroke-width="2.4" stroke-linecap="round"/></g>
+    <rect x="30" y="430" width="70" height="36" fill="${C.yellow}" class="ink2"/><rect x="54" y="404" width="46" height="28" fill="${C.blue}" class="ink2"/><rect x="74" y="378" width="26" height="28" fill="${C.green}" class="ink2"/>
+    <path d="M262 300 Q262 252 300 254 Q312 230 330 246 Q352 232 360 256 Q392 262 392 312 L392 420 Q326 446 262 420 Z" fill="${C.orange}" class="ink"/>
+    <ellipse cx="327" cy="350" rx="44" ry="50" fill="#FFB27A" class="ink"/><ellipse cx="327" cy="350" rx="28" ry="34" fill="${C.pink}" opacity=".8" class="ink2"/>
+    <circle cx="300" cy="280" r="9" fill="#fff" class="ink2"/><circle cx="352" cy="280" r="9" fill="#fff" class="ink2"/><circle cx="302" cy="282" r="4" fill="#2E2A3B"/><circle cx="350" cy="282" r="4" fill="#2E2A3B"/>
+    <circle cx="290" cy="410" r="3" fill="#B5531E"/><circle cx="364" cy="410" r="3" fill="#B5531E"/><circle cx="276" cy="380" r="3" fill="#B5531E"/>
+    <g id="puddle"><ellipse cx="170" cy="512" rx="54" ry="16" fill="#A9DAF5" stroke="#2E2A3B" stroke-width="2" opacity=".95"/><path d="M140 508 q14 -6 30 -2" stroke="#fff" stroke-width="3" fill="none"/><circle cx="208" cy="500" r="5" fill="#A9DAF5" stroke="#2E2A3B" stroke-width="1.6"/></g>
+    ${fence}
+    <g id="picket"><path d="M286 598 v-36 l6 -6 l-3 -10 l6 -4 v56z" fill="#fff" class="ink2"/><path d="M296 600 l14 -20 l2 8 l-12 14z" fill="#fff" class="ink2"/><path d="M287 572 l5 3 l-4 4" stroke="#2E2A3B" stroke-width="1.6" fill="none"/></g>
+    <rect x="-10" y="590" width="410" height="14" fill="#fff" class="ink2"/><rect x="-10" y="546" width="410" height="9" fill="#fff" class="ink2"/>
+   </g>
+   <g id="marks"></g>
+  </svg>`;
+}
+function sceneSafety(sc){
+  setClock('08:15');
+  sc.style.background='#E3E8EC';
+  sc.innerHTML=`<div style="position:absolute;inset:0;touch-action:manipulation">${playArea()}</div>
+   <div class="task"><span class="tag">ก่อนเปิด</span><p>ตรวจความปลอดภัย<small>แตะจุดที่อาจทำให้เด็กเจ็บ</small></p><span class="count" id="cnt">0/3</span></div>`;
+  const svg=$('#play',sc),marks=$('#marks',sc);
+  const H=[
+    {id:'screw',x:180,y:382,r:30,msg:'น็อตโผล่ ขันเข้าแล้ว',fix:g=>{g.innerHTML=`<circle cx="178" cy="384" r="5" fill="#B9BEC6" stroke="#2E2A3B" stroke-width="2"/>`}},
+    {id:'puddle',x:170,y:510,r:46,msg:'พื้นเปียก เช็ดแล้ว',fix:g=>{g.style.transition='opacity .8s';g.style.opacity=0}},
+    {id:'picket',x:296,y:574,r:30,msg:'รั้วหัก เปลี่ยนแล้ว',fix:g=>{g.innerHTML=`<path d="M282 596 v-62 l8 -10 l8 10 v62z" fill="#FFFDF4" class="ink2"/>`}}
+  ];
+  let found=0,hintT;
+  const resetHint=()=>{clearTimeout(hintT);hintT=setTimeout(()=>{const h=H.find(h=>!h.done);if(!h)return;
+    const c=document.createElementNS(NS,'circle');c.setAttribute('cx',h.x);c.setAttribute('cy',h.y);c.setAttribute('r',10);c.setAttribute('fill','none');c.setAttribute('stroke','#fff');c.setAttribute('stroke-width','4');
+    marks.appendChild(c);c.animate([{r:6,opacity:1},{r:34,opacity:0}],{duration:1200,iterations:3});setTimeout(()=>c.remove(),3700);resetHint()},7000)};
+  resetHint();setTimeout(()=>coach(sc,'ดูให้ละเอียดนะ ชิ้นเล็กๆ นี่แหละอันตรายที่สุด',4500),600);
+  svg.addEventListener('pointerup',e=>{
+    const p=svgPt(svg,e);const h=H.find(h=>!h.done&&Math.hypot(p.x-h.x,p.y-h.y)<h.r);
+    const[cx,cy]=relPos(sc,e.clientX,e.clientY);
+    if(!h){SFX.soft();const rp=el('div',{style:`position:absolute;left:${cx-14}px;top:${cy-14}px;width:28px;height:28px;border:3px solid rgba(255,255,255,.9);border-radius:50%;pointer-events:none;z-index:20`});
+      sc.appendChild(rp);rp.animate([{transform:'scale(.4)',opacity:1},{transform:'scale(1.4)',opacity:0}],{duration:450});setTimeout(()=>rp.remove(),460);return}
+    h.done=true;found++;resetHint();SFX.pop(found*2);buzz(15);
+    const ring=document.createElementNS(NS,'path');const R=h.r*.95;
+    ring.setAttribute('d',`M${h.x+R} ${h.y} A${R} ${R*.9} 0 1 0 ${h.x+R*.9} ${h.y+R*.35}`);ring.setAttribute('fill','none');ring.setAttribute('stroke',C.red);ring.setAttribute('stroke-width','4');ring.setAttribute('stroke-linecap','round');
+    marks.appendChild(ring);const L=ring.getTotalLength();ring.style.strokeDasharray=L;ring.style.strokeDashoffset=L;ring.getBoundingClientRect();ring.style.transition='stroke-dashoffset .4s ease';ring.style.strokeDashoffset=0;
+    setTimeout(()=>{h.fix(svg.querySelector('#'+h.id));ring.style.transition='stroke .3s';ring.setAttribute('stroke',C.green);SFX.sparkle();sparks(sc,cx,cy,10)},550);
+    toast(sc,h.msg,Math.max(140,cy-50));$('#cnt',sc).textContent=found+'/3';
+    if(found===3){clearTimeout(hintT);skip.remove();setTimeout(()=>finish(),1500)}
+  });
+  async function finish(){
+    const o=el('div',{class:'narr',style:'background:rgba(255,246,227,.95);opacity:0;transition:opacity .5s'},
+      `<div class="line in" style="font-size:24px">น็อตตัวเดียว ขอบรั้วซี่เดียว<br>พื้นเปียกแค่นิดเดียว</div>
+       <div class="line in" style="font-size:17px;opacity:.75">ถ้าพี่ไม่เห็นก่อน<br>อาจมีเด็กสักคนกลับบ้านพร้อมแผล</div>`);
+    sc.appendChild(o);requestAnimationFrame(()=>o.style.opacity=1);sc.appendChild(el('div',{class:'tapnext'},'แตะเพื่อไปต่อ'));
+    await waitTap(sc);SFX.pop();go(sceneOpen);
+  }
+  const skip=skipBtn(sc,'ข้าม ›',()=>{clearTimeout(hintT);finish()});
+}
+
+/* ============== SCENE 5: doors open ============== */
+async function sceneOpen(sc){
+  setClock('09:00');setDots(1);SFX.chime();
+  sc.style.background=C.yellow;
+  let kids='';const kc=[C.pink,C.blue,C.green,C.orange,C.purple,C.red,C.teal];
+  for(let i=0;i<9;i++){const x=20+i*42,s=.75+(i%3)*.15;kids+=`<g class="kid" style="animation:bob ${.45+(i%4)*.08}s ease-in-out ${i*.07}s infinite;transform-box:fill-box"><g transform="translate(${x} ${470-(i%3)*18}) scale(${s})">
+     <path d="M-18 70 Q-16 24 0 22 Q16 24 18 70Z" fill="${kc[i%7]}" class="ink2"/><circle cx="0" cy="6" r="18" fill="#F3C9A5" class="ink2"/>
+     <path d="M-18 2 Q-14 -16 0 -14 Q16 -16 18 2 Q8 -6 0 -4 Q-10 -6 -18 2Z" fill="#3A2A2E"/><circle cx="-6" cy="8" r="2.4" fill="#2E2A3B"/><circle cx="6" cy="8" r="2.4" fill="#2E2A3B"/><path d="M-5 15 Q0 20 5 15" fill="none" stroke="#2E2A3B" stroke-width="2"/></g></g>`}
+  sc.innerHTML=`<svg class="art" viewBox="0 0 390 640" preserveAspectRatio="xMidYMax slice"><g filter="url(#wob)">
+    <rect width="390" height="640" fill="#FFE59A"/>
+    <rect x="40" y="150" width="310" height="300" fill="#8BD0EA" class="ink"/>
+    <rect id="dl" x="40" y="150" width="155" height="300" fill="#CFEFFB" class="ink" style="transition:transform 1.4s ease;transform-origin:40px 300px"/>
+    <rect id="dr" x="195" y="150" width="155" height="300" fill="#CFEFFB" class="ink" style="transition:transform 1.4s ease;transform-origin:350px 300px"/>
+    <rect x="20" y="120" width="350" height="34" fill="${C.orange}" class="ink"/>
+    <rect x="-10" y="440" width="410" height="220" fill="#7FC36F" class="ink"/>
+    <path d="M-10 520 Q195 470 400 520" stroke="#2E66B5" stroke-width="40" fill="none"/>
+    <g id="kids" style="opacity:0;transition:opacity .6s">${kids}</g></g></svg>
+   <div class="narr" style="justify-content:flex-start;padding-top:calc(env(safe-area-inset-top,0px) + 90px)"><div class="time">09:00</div><div class="line in">ประตูเปิดแล้ว!</div></div>`;
+  await sleep(500);$('#dl',sc).style.transform='scaleX(.12)';$('#dr',sc).style.transform='scaleX(.12)';
+  await sleep(700);$('#kids',sc).style.opacity=1;
+  for(let i=0;i<6;i++){setTimeout(()=>SFX.pop(i*2+3),i*120)}
+  await sleep(2400);go(sceneMew);
+}
+
+/* ============== SCENE 6: Mew at the art table ============== */
+function crayonSVG(col){return `<svg viewBox="0 0 42 118" class="crayon-svg"><path d="M9 30 L21 4 L33 30Z" fill="${col}" stroke="#2E2A3B" stroke-width="2.6" stroke-linejoin="round"/>
+  <rect x="8" y="30" width="26" height="82" rx="4" fill="${col}" stroke="#2E2A3B" stroke-width="2.6"/><rect x="8" y="46" width="26" height="40" fill="#fff" opacity=".85" stroke="#2E2A3B" stroke-width="2"/>
+  <path d="M13 56 h16 M13 66 h12 M13 76 h14" stroke="${col}" stroke-width="3" stroke-linecap="round"/></svg>`}
+function sceneMew(sc){
+  setClock('10:20');
+  sc.style.background='#FDEBD3';
+  sc.innerHTML=`<svg class="art" id="mewArt" viewBox="0 0 390 700" preserveAspectRatio="xMidYMid slice">
+    <rect width="390" height="700" fill="#F7D9B5"/>
+    <g filter="url(#wob)">
+     <rect x="0" y="0" width="390" height="420" fill="${C.orange}" opacity=".85"/>
+     <circle cx="70" cy="120" r="40" fill="#fff" opacity=".25"/><circle cx="320" cy="190" r="60" fill="#fff" opacity=".18"/>
+     <rect x="250" y="70" width="110" height="80" fill="#fff" class="ink2" transform="rotate(4 305 110)"/><path d="M262 130 l22 -30 l16 18 l12 -10 l30 22z" fill="${C.green}" transform="rotate(4 305 110)"/><circle cx="335" cy="92" r="8" fill="${C.yellow}" transform="rotate(4 305 110)"/>
+     <rect x="30" y="60" width="90" height="70" fill="#fff" class="ink2" transform="rotate(-5 75 95)"/><path d="M48 112 q12 -30 26 0 q12 -24 28 0" stroke="${C.blue}" stroke-width="5" fill="none" transform="rotate(-5 75 95)"/>
+    </g>
+    <g id="mewG" transform="translate(195 300)" filter="url(#wob)">${mewSVG()}</g>
+    <g filter="url(#wob)">
+     <rect x="-10" y="430" width="410" height="300" fill="#2F7D5A" class="ink"/>
+     <rect x="-10" y="430" width="410" height="18" fill="#3E9A70" class="ink2"/>
+     <rect x="100" y="470" width="190" height="130" fill="#fff" class="ink2" transform="rotate(-3 195 535)"/>
+     <path d="M150 560 q20 -40 40 0" stroke="${C.blue}" stroke-width="4" fill="none" transform="rotate(-3 195 535)"/>
+     <g transform="translate(250 470) rotate(28)"><rect width="12" height="34" rx="2" fill="${C.pink}" class="ink2"/></g>
+     <g transform="translate(266 488) rotate(-50)"><rect width="12" height="22" rx="2" fill="${C.pink}" class="ink2"/><path d="M0 0 L6 -10 L12 0Z" fill="${C.pink}" class="ink2"/></g>
+    </g>
+   </svg>
+   <div class="tray" id="tray"></div>`;
+  const art=$('#mewArt',sc);mewFace(art,'cry');
+  const mew=$('#mewG',sc);
+  // tears animation
+  art.querySelectorAll('.tear').forEach((t,i)=>t.animate([{transform:'translateY(0)',opacity:1},{transform:'translateY(26px)',opacity:0}],{duration:1100,delay:i*550,iterations:Infinity}));
+  const sobI=setInterval(()=>SFX.sob(),2200);SFX.sob();
+  const name=S.name?('พี่'+S.name):'พี่';
+  function say(text,top,tail='50%'){sc.querySelectorAll('.bubble').forEach(b=>b.remove());const b=el('div',{class:'bubble',style:`left:50%;top:${top};transform:translateX(-50%);--tail:${tail}`},text);
+    b.style.translate='-50% 0';b.style.transform='none';sc.appendChild(b);return b}
+  setTimeout(()=>{say('พี่คะ…','18%');art.animate([{transform:'translateX(0)'},{transform:'translateX(4px)'},{transform:'translateX(0)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],{duration:500});buzz(8)},300);
+  setTimeout(()=>say('ฮือ… สีชมพูของหนูหัก<br>หนูจะวาดดอกไม้ให้แม่…','14%'),1700);
+  const task=el('div',{class:'task',style:'top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 182px)'},`<span class="tag">ระหว่างวัน</span><p>น้องมิวร้องไห้ ช่วยน้องหน่อย<small>ลากสีที่ใช่ไปให้น้อง</small></p>`);
+  sc.appendChild(task);
+  const cols=[[C.blue,'blue'],[C.pink,'pink'],[C.green,'green'],[C.yellow,'yellow']];
+  const tray=$('#tray',sc);
+  cols.forEach(([c,n])=>{const d=el('div',{class:'crayon','data-c':n,role:'button','aria-label':'สี'+n},crayonSVG(c));tray.appendChild(d)});
+  let solved=false;
+  tray.querySelectorAll('.crayon').forEach(cr=>{
+    let ghost=null;
+    cr.addEventListener('pointerdown',e=>{if(solved)return;e.preventDefault();cr.setPointerCapture(e.pointerId);
+      ghost=cr.cloneNode(true);ghost.classList.add('drag');document.body.appendChild(ghost);cr.style.opacity=.25;mv(e);SFX.pop(-2)});
+    const mv=e=>{if(!ghost)return;ghost.style.left=(e.clientX-21)+'px';ghost.style.top=(e.clientY-90)+'px'};
+    cr.addEventListener('pointermove',mv);
+    const end=e=>{if(!ghost)return;ghost.remove();ghost=null;cr.style.opacity=1;
+      const r=mew.getBoundingClientRect();const inside=e.clientX>r.left-20&&e.clientX<r.right+20&&e.clientY>r.top-20&&e.clientY<r.bottom+40;
+      if(!inside)return;
+      if(cr.dataset.c!=='pink'){mew.classList.remove('shake');void mew.getBoundingClientRect();
+        art.animate([{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],{duration:300});
+        say('ไม่ใช่สีนี้ค่ะ… หนูอยากได้สีชมพู','14%');SFX.soft();return}
+      solved=true;cr.style.visibility='hidden';clearInterval(sobI);mewFace(art,'happy');SFX.win();buzz([15,40,15]);
+      const[x,y]=[r.left+r.width/2-sc.getBoundingClientRect().left,r.top+r.height*.4-sc.getBoundingClientRect().top];sparks(sc,x,y,18);
+      say(`ว้าว! ขอบคุณค่ะ${name}<br>วาดด้วยกันไหมคะ?`,'14%');
+      task.remove();
+      setTimeout(()=>{const b=el('button',{class:'btn',style:'position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 150px);z-index:30'},'วาดด้วยกัน');
+        tray.remove();coach(sc,'เห็นไหม บางทีเด็กแค่อยากให้มีคนฟัง',6000);sc.appendChild(b);b.addEventListener('click',()=>{SFX.pop();go(sceneDraw)},{once:true})},900)};
+    cr.addEventListener('pointerup',end);cr.addEventListener('pointercancel',end);
+  });
+  skipBtn(sc,'ข้าม ›',()=>{clearInterval(sobI);go(sceneDraw)});
+  sc.addEventListener('remove',()=>clearInterval(sobI));
+}
+
+/* ============== SCENE 7: color together ============== */
+function sceneDraw(sc){
+  setClock('10:30');
+  sc.style.background='#2F7D5A';
+  sc.innerHTML=`<div class="task" style="top:calc(env(safe-area-inset-top,0px) + 62px)"><span class="tag">ระหว่างวัน</span><p>ระบายสีภาพกับน้องมิว<small>ภาพนี้น้องจะเอาไปให้แม่</small></p></div>
+    <div style="position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 150px);bottom:calc(env(safe-area-inset-bottom,0px) + 120px);display:flex;align-items:center;justify-content:center;padding:0 22px">
+     <div class="paperwrap" id="paper" style="width:100%;max-width:340px;aspect-ratio:3/3.6"><canvas id="colorC"></canvas><canvas id="lineC" style="pointer-events:none"></canvas></div></div>
+    <div style="position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 54px)"><div class="palette" id="pal"></div></div>
+    <div id="mini" style="position:absolute;right:6px;top:calc(env(safe-area-inset-top,0px) + 128px);width:86px;height:86px;z-index:22"><svg viewBox="-70 -70 140 140" width="100%" height="100%" id="miniMew" filter="url(#wob)">${mewSVG()}</svg></div>`;
+  mewFace($('#miniMew',sc),'calm');
+  const paper=$('#paper',sc),cc=$('#colorC',sc),lc=$('#lineC',sc);
+  const W=300,Hh=360,dpr=Math.min(2,window.devicePixelRatio||1);
+  [cc,lc].forEach(c=>{c.width=W*dpr;c.height=Hh*dpr});
+  const cx=cc.getContext('2d'),lx=lc.getContext('2d');cx.scale(dpr,dpr);lx.scale(dpr,dpr);
+  cx.fillStyle='#fff';cx.fillRect(0,0,W,Hh);
+  function drawLines(){lx.clearRect(0,0,W,Hh);lx.strokeStyle='#4A4458';lx.lineWidth=3;lx.lineCap='round';lx.lineJoin='round';
+    const wob=(f)=>{lx.save();f();lx.restore()};
+    // stem + leaves
+    lx.beginPath();lx.moveTo(150,170);lx.bezierCurveTo(146,220,156,260,150,320);lx.stroke();
+    lx.beginPath();lx.moveTo(150,250);lx.bezierCurveTo(118,228,96,240,92,252);lx.bezierCurveTo(112,266,136,262,150,250);lx.stroke();
+    lx.beginPath();lx.moveTo(152,282);lx.bezierCurveTo(184,258,206,268,210,282);lx.bezierCurveTo(190,296,166,294,152,282);lx.stroke();
+    // petals
+    for(let i=0;i<6;i++){const a=i/6*Math.PI*2-Math.PI/2;lx.beginPath();lx.ellipse(150+Math.cos(a)*36,132+Math.sin(a)*36,22,28,a+Math.PI/2,0,Math.PI*2);lx.stroke()}
+    lx.beginPath();lx.arc(150,132,20,0,Math.PI*2);lx.stroke();
+    // sun
+    lx.beginPath();lx.arc(256,46,22,0,Math.PI*2);lx.stroke();
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2;lx.beginPath();lx.moveTo(256+Math.cos(a)*30,46+Math.sin(a)*30);lx.lineTo(256+Math.cos(a)*40,46+Math.sin(a)*40);lx.stroke()}
+    // heart
+    lx.beginPath();lx.moveTo(56,74);lx.bezierCurveTo(56,58,34,52,30,70);lx.bezierCurveTo(28,84,50,96,56,104);lx.bezierCurveTo(62,96,84,84,82,70);lx.bezierCurveTo(78,52,56,58,56,74);lx.stroke();
+    // ground line
+    lx.setLineDash([2,8]);lx.beginPath();lx.moveTo(30,322);lx.quadraticCurveTo(150,312,270,322);lx.stroke();lx.setLineDash([]);
+    lx.font='600 24px Mali, Anuphan, sans-serif';lx.fillStyle='#4A4458';lx.textAlign='center';lx.fillText('ให้แม่',150,352);
+  }
+  (document.fonts?document.fonts.ready:Promise.resolve()).then(drawLines);drawLines();
+  const pal=[[C.pink,'ชมพู'],[C.yellow,'เหลือง'],[C.green,'เขียว'],[C.orange,'ส้ม'],[C.blue,'ฟ้า']];let cur=pal[0][0];
+  const pe=$('#pal',sc);pal.forEach(([c,n],i)=>{const b=el('button',{class:'sw'+(i?'':' sel'),style:`background:${c}`,'aria-label':'สี'+n});
+    b.addEventListener('click',()=>{cur=c;pe.querySelectorAll('.sw').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');SFX.pop(i)});pe.appendChild(b)});
+  let last=null,ink=0,doneBtn=null;
+  const toP=e=>{const r=cc.getBoundingClientRect();return[(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*Hh]};
+  function crayon(a,b){const d=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(d/1.6));cx.fillStyle=cur;
+    for(let i=0;i<n;i++){const t=i/n,x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t;for(let k=0;k<5;k++){cx.globalAlpha=rnd(.18,.45);cx.fillRect(x+rnd(-7,7),y+rnd(-7,7),rnd(1.5,3.5),rnd(1.5,3.5))}}
+    cx.globalAlpha=1;ink+=d}
+  paper.addEventListener('pointerdown',e=>{paper.setPointerCapture(e.pointerId);last=toP(e);crayon(last,[last[0]+.5,last[1]+.5]);squeakStart()});
+  paper.addEventListener('pointermove',e=>{if(!last)return;const p=toP(e);squeakSet(Math.hypot(p[0]-last[0],p[1]-last[1])/400);crayon(last,p);last=p;
+    if(ink>900&&!doneBtn){doneBtn=el('button',{class:'btn',style:'position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 112px);z-index:30;font-size:17px;padding:10px 18px'},'เสร็จแล้ว');
+      sc.appendChild(doneBtn);doneBtn.addEventListener('click',finish,{once:true});mewFace($('#miniMew',sc),'happy');
+      const b=el('div',{class:'bubble',style:'right:96px;top:calc(env(safe-area-inset-top,0px) + 136px);font-size:15px;--tail:88%'},'สวยจัง!');sc.appendChild(b);setTimeout(()=>b.remove(),1800)}});
+  const up=()=>{last=null;squeakStop()};paper.addEventListener('pointerup',up);paper.addEventListener('pointercancel',up);
+  function snapshot(){const o=document.createElement('canvas');o.width=W*dpr;o.height=Hh*dpr;const ox=o.getContext('2d');ox.drawImage(cc,0,0);ox.drawImage(lc,0,0);S.drawing=o.toDataURL('image/png')}
+  async function finish(){
+    squeakStop();snapshot();SFX.win();
+    const r=paper.getBoundingClientRect(),s=sc.getBoundingClientRect();sparks(sc,r.left-s.left+r.width/2,r.top-s.top+r.height/2,18);
+    const name=S.name?('พี่'+S.name):'พี่';
+    const b=el('div',{class:'bubble',style:'left:20px;right:20px;max-width:none;top:calc(env(safe-area-inset-top,0px) + 62px);text-align:center;z-index:33'},`หนูจะเอาไปให้แม่! ขอบคุณค่ะ${name}`);
+    sc.appendChild(b);await sleep(2200);go(sceneDusk);
+  }
+  skipBtn(sc,'ข้าม ›',finish);
+}
+
+/* ============== SCENE 8: closing narration ============== */
+async function sceneDusk(sc){
+  setClock('16:30');setDots(2);setMood('warm');
+  sc.style.background='linear-gradient(#F2A36B,#E9785A 60%,#B9586A)';
+  sc.innerHTML=`<div class="narr" style="color:#fff"><div class="time">16:30</div>
+   <div class="line" id="l1">เด็กคนสุดท้ายโบกมือลา</div>
+   <div class="line" id="l2" style="font-size:18px;opacity:.9">ห้องที่เคยเต็มไปด้วยเสียงหัวเราะ<br>เหลือแต่ของเล่นกระจายเต็มพื้น</div></div>
+   <div class="tapnext" style="color:#fff">แตะเพื่อไปต่อ</div>`;
+  await sleep(500);$('#l1',sc).classList.add('in');await sleep(1200);$('#l2',sc).classList.add('in');
+  await waitTap(sc);SFX.pop();go(sceneTidy);
+}
+
+/* ============== SCENE 9: tidy up balls ============== */
+function sceneTidy(sc){
+  setClock('16:45');
+  sc.style.background='#3B3358';
+  let stools='';[[40,250,C.yellow],[90,236,C.blue],[300,240,C.green],[350,256,C.pink],[250,228,'#9AA3AE']].forEach(([x,y,c])=>{
+    stools+=`<g><path d="M${x-18} ${y} v26 a18 7 0 0 0 36 0 v-26" fill="${c}" class="ink2"/><ellipse cx="${x}" cy="${y}" rx="18" ry="7" fill="${c}" class="ink2"/><ellipse cx="${x}" cy="${y}" rx="18" ry="7" fill="#fff" opacity=".25"/></g>`});
+  const pos=[[60,350,C.red],[150,316,C.yellow],[300,330,C.blue],[340,420,C.green],[90,450,C.pink],[230,400,C.orange],[180,470,C.purple]];
+  sc.innerHTML=`<svg class="art" id="hall" viewBox="0 0 390 680" preserveAspectRatio="xMidYMax slice" style="touch-action:none">
+    <rect width="390" height="680" fill="#E8E9EC"/>
+    <g filter="url(#wob)">
+     <path d="M0 26 H390 M0 52 H390" stroke="#C3C8CF" stroke-width="7"/>
+     <rect x="-10" y="70" width="410" height="140" fill="#D5D9DE" class="ink2"/>
+     <rect x="30" y="96" width="140" height="90" fill="#F8C9A0" class="ink2"/><rect x="220" y="96" width="140" height="90" fill="#F8C9A0" class="ink2"/>
+     <path d="M100 96 v90 M290 96 v90" stroke="#fff" stroke-width="5"/>
+     <rect x="-10" y="206" width="410" height="480" fill="#D9DCE0" class="ink2"/>
+     <ellipse cx="195" cy="470" rx="300" ry="190" fill="#2E66B5" class="ink2"/>
+     <ellipse cx="230" cy="480" rx="250" ry="160" fill="#4AA65A" class="ink2"/>
+     ${stools}
+    </g>
+    <g id="balls"></g>
+    <g id="basket" filter="url(#wob)" transform="translate(195 590)">
+     <path d="M-80 -30 L80 -30 L66 60 L-66 60Z" fill="#C98A4B" class="ink"/>
+     <path d="M-76 -6 H76 M-72 18 H72 M-69 40 H69" stroke="#9A6330" stroke-width="4"/>
+     <path d="M-50 -30 L-44 60 M-16 -30 L-14 60 M16 -30 L14 60 M50 -30 L44 60" stroke="#9A6330" stroke-width="3"/>
+     <ellipse cx="0" cy="-30" rx="82" ry="14" fill="#7A4A22" class="ink"/>
+     <g id="inBasket"></g>
+    </g>
+    <rect id="dim" width="390" height="680" fill="#1E1A33" opacity="0" pointer-events="none"/>
+   </svg>
+   <div class="task"><span class="tag">หลังปิด</span><p>เก็บลูกบอลกลับตะกร้า<small>ลากลูกบอลลงตะกร้าให้ครบ</small></p><span class="count" id="cnt">0/${pos.length}</span></div>`;
+  const svg=$('#hall',sc),bg=$('#balls',sc),inB=$('#inBasket',sc),dim=$('#dim',sc);
+  let got=0;
+  pos.forEach(([x,y,c],i)=>{const g=document.createElementNS(NS,'g');g.innerHTML=ballMarkup(0,0,22,c);g.setAttribute('transform',`translate(${x} ${y})`);g.style.cursor='grab';
+    g.dataset.x=x;g.dataset.y=y;bg.appendChild(g);
+    g.addEventListener('pointerdown',e=>{e.preventDefault();g.setPointerCapture(e.pointerId);g.dragging=true;bg.appendChild(g);SFX.pop(-4);g.setAttribute('transform',`translate(${g.dataset.x} ${g.dataset.y}) scale(1.15)`)});
+    g.addEventListener('pointermove',e=>{if(!g.dragging)return;const p=svgPt(svg,e);g.dataset.x=p.x;g.dataset.y=p.y-20;g.setAttribute('transform',`translate(${p.x} ${p.y-20}) scale(1.15)`)});
+    const end=()=>{if(!g.dragging)return;g.dragging=false;const x=+g.dataset.x,y=+g.dataset.y;
+      if(Math.abs(x-195)<95&&y>500&&y<660){g.remove();const k=document.createElementNS(NS,'g');const bx=-50+(got%5)*25,by=-34-Math.floor(got/5)*14;
+        k.innerHTML=ballMarkup(bx,by,15,c);inB.appendChild(k);k.animate([{transform:'translateY(-40px)'},{transform:'translateY(0)'}],{duration:300,easing:'cubic-bezier(.3,1.6,.5,1)'});
+        SFX.plop(got);buzz(10);got++;$('#cnt',sc).textContent=got+'/'+pos.length;dim.setAttribute('opacity',(got/pos.length*.45).toFixed(2));
+        if(got===4)coach(sc,'ยืนมาเก้าชั่วโมงแล้วเนอะ… พี่ทำแบบนี้มา 20 ปีแล้วล่ะ',4500,'top');
+        if(got===pos.length){skip.remove();setTimeout(lightsOut,800)}}
+      else g.setAttribute('transform',`translate(${x} ${y})`)};
+    g.addEventListener('pointerup',end);g.addEventListener('pointercancel',end)});
+  setTimeout(()=>coach(sc,'เก็บให้ครบนะ พรุ่งนี้เช้าเด็กๆ จะได้เจอของพร้อม',4200,'top'),5000);
+  const hand=el('div',{class:'hand'},HAND);sc.appendChild(hand);
+  requestAnimationFrame(()=>{const s=sc.getBoundingClientRect();const p1=svg.createSVGPoint();p1.x=230;p1.y=400;const a=p1.matrixTransform(svg.getScreenCTM());p1.x=195;p1.y=560;const b=p1.matrixTransform(svg.getScreenCTM());
+    hand.animate([{left:a.x-s.left-14+'px',top:a.y-s.top+'px',opacity:0},{opacity:1,offset:.15},{left:b.x-s.left-14+'px',top:b.y-s.top+'px',opacity:1,offset:.8},{left:b.x-s.left-14+'px',top:b.y-s.top+'px',opacity:0}],{duration:1600,iterations:3});setTimeout(()=>hand.remove(),4800)});
+  async function lightsOut(){
+    SFX.click();setMood('night');dim.style.transition='opacity 1.2s';dim.setAttribute('opacity','.86');setClock('17:30',true);
+    $('.task',sc).style.opacity=0;await sleep(900);
+    const o=el('div',{class:'narr',style:'color:#fff'},`<div class="line" id="q1" style="font-size:26px">ไม่มีใครเห็น</div><div class="line" id="q2" style="font-size:19px;opacity:.85">ไม่มีใครปรบมือ<br>วันนี้ก็เหมือนทุกวัน</div>`);
+    sc.appendChild(o);await sleep(200);$('#q1',o).classList.add('in');await sleep(1600);$('#q2',o).classList.add('in');await sleep(2600);
+    const q=el('div',{class:'line',style:'font-size:22px;color:'+C.yellow},'…จริงเหรอ?');o.appendChild(q);await sleep(60);q.classList.add('in');
+    await sleep(900);musicTo(0,1.2);await sleep(1800);go(sceneReveal);
+  }
+  const skip=skipBtn(sc,'ข้าม ›',lightsOut);
+}
+
+/* ============== SCENE 10: reveal ============== */
+function revealBallArt(){return `<svg viewBox="0 0 300 300" width="100%" height="100%"><rect width="300" height="300" fill="#CFE6F5"/>
+  <g filter="url(#wob)">${ballPit(300,320,170,5,60)}
+   <g style="animation:bob 1.2s ease-in-out infinite">${ballMarkup(150,90,40,C.red)}</g>
+   <path d="M120 150 q-10 -20 6 -26 M180 150 q10 -20 -6 -26" stroke="#2E2A3B" stroke-width="3" fill="none"/>
+   <g transform="translate(150 230) scale(.62)">${mewSVG().replace('class="cry"','class="cry" style="display:none"').replace('class="happy" style="display:none"','class="happy"')}</g>
+   <path d="M60 60 l8 -8 M240 70 l10 -6 M70 110 l-10 -2 M235 120 l10 2" stroke="#2E2A3B" stroke-width="3" stroke-linecap="round"/>
+  </g></svg>`}
+function revealSafeArt(){return `<svg viewBox="0 0 300 300" width="100%" height="100%"><rect width="300" height="300" fill="#FFF0D6"/>
+  <g filter="url(#wob)">
+   <rect x="0" y="230" width="300" height="70" fill="${C.blue}" class="ink2"/>
+   <path d="M30 120 C110 120 130 220 240 236 L250 256 L230 262 C120 244 100 150 20 148Z" fill="${C.pink}" class="ink"/>
+   <circle cx="94" cy="148" r="5" fill="#B9BEC6" stroke="#2E2A3B" stroke-width="2"/>
+   <g transform="translate(150 160) rotate(28) scale(.5)">${mewSVG().replace('class="cry"','class="cry" style="display:none"').replace('class="happy" style="display:none"','class="happy"')}</g>
+   <path d="M200 90 l14 -14 l6 18z" fill="${C.yellow}" class="ink2"/><path d="M240 140 l10 -6 M228 112 l14 -2" stroke="#2E2A3B" stroke-width="3" stroke-linecap="round"/>
+   <path d="M40 60 l18 0 l-9 -16z" fill="${C.teal}" class="ink2"/>
+  </g></svg>`}
+function fridgeArt(){return `<div style="position:absolute;inset:0;background:#DCE6EC">
+   <div style="position:absolute;right:16px;top:30px;width:12px;height:110px;border-radius:8px;background:#BCC9D2;border:2.5px solid #2E2A3B"></div>
+   <div style="position:absolute;left:14%;top:12%;width:66%;transform:rotate(-4deg);background:#fff;border:2.5px solid #2E2A3B;box-shadow:3px 4px 0 rgba(46,42,59,.7)">
+     ${S.drawing?`<img src="${S.drawing}" alt="ภาพที่คุณระบายกับน้องมิว" style="display:block;width:100%">`:`<div style="aspect-ratio:3/3.6;display:grid;place-items:center;font-family:var(--f-display);font-size:22px">ดอกไม้ให้แม่</div>`}
+     <span style="position:absolute;left:44%;top:-12px;width:24px;height:24px;border-radius:50%;background:${C.red};border:2.5px solid #2E2A3B"></span></div>
+   <span style="position:absolute;left:10%;bottom:12%;width:30px;height:30px;border-radius:8px;background:${C.yellow};border:2.5px solid #2E2A3B;transform:rotate(12deg)"></span>
+   <span style="position:absolute;right:16%;bottom:8%;width:26px;height:26px;border-radius:50%;background:${C.teal};border:2.5px solid #2E2A3B"></span></div>`}
+function revealYingArt(){return `<svg viewBox="0 0 300 300" width="100%" height="100%"><rect width="300" height="300" fill="#FFE59A"/>
+  <g filter="url(#wob)"><circle cx="150" cy="140" r="110" fill="#FFF3C4"/><g transform="translate(150 140) scale(1.25)">${yingSVG()}</g></g></svg>`}
+function revealGrownArt(){return `<svg viewBox="0 0 400 300" width="100%" height="100%"><rect width="400" height="300" fill="#D7ECF7"/>
+  <g filter="url(#wob)">${ballPit(400,320,210,8,50)}
+   <g transform="translate(130 140) scale(.95)">${grownMewSVG()}</g>
+   <g transform="translate(275 150) scale(.92)">${yingSVG(true)}</g>
+   <path d="M196 70 c-8 -12 -26 -4 -16 10 l16 14 l16 -14 c10 -14 -8 -22 -16 -10z" fill="${C.pink}" class="ink2"/>
+  </g></svg>`}
+function sceneReveal(sc){
+  hud.classList.add('hide');setMood('warm');
+  sc.style.background='#FFF6E3';
+  const name=S.name?('พี่'+S.name):'พี่';
+  const cards=[
+    {html:`<div class="pic">${revealBallArt()}<img class="real" src="img/softplay.jpg" alt="มุมเด็กเล่นจริงในพิพิธภัณฑ์"><span class="realtag">ภาพจริง · มุมเด็กเล่น</span></div>
+      <div class="cap">ลูกบอลสีแดงที่คุณเช็ดเมื่อเช้า<br>ถูกโยนเล่นไป <em>47 ครั้ง</em></div><div class="sub">พร้อมเสียงหัวเราะทุกครั้ง</div>`,real:1},
+    {html:`<div class="pic">${revealSafeArt()}<img class="real" src="img/playland.jpg" alt="สไลเดอร์จริงใน Kids Happy Land"><span class="realtag">ภาพจริง · Kids Happy Land</span></div>
+      <div class="cap">น็อตตัวที่คุณขันเข้าไป<br>ทำให้วันนี้ <em>ไม่มีเด็กคนไหนเจ็บ</em></div><div class="sub">และไม่มีใครรู้ด้วยซ้ำว่าเกือบเกิดอะไรขึ้น</div>`,real:1},
+    {html:`<div class="pic">${fridgeArt()}<div class="note" id="mn" style="right:-10px;bottom:-14px">ขอบคุณค่ะ<br>${name} ♥<br><span style="font-size:15px;color:var(--ink)">— มิว</span></div></div>
+      <div class="cap">ภาพที่คุณระบายกับน้องมิว<br>ตอนนี้ติดอยู่บน <em>ตู้เย็นที่บ้าน</em></div>`,note:1},
+    {html:`<div class="sticky">ขอบคุณพี่ๆ ที่ดูแลน้องมิววันนี้นะคะ<br>กลับถึงบ้านน้องเล่าไม่หยุดเลย<br>ถามแม่ว่าเสาร์หน้ามาอีกได้ไหม<div class="from">— แม่น้องมิว</div></div>
+      <div class="cap" style="margin-top:14px">คำขอบคุณแบบนี้<br>คือ <em>ค่าตอบแทน</em> ที่พี่ๆ ได้รับ</div>`},
+    {pause:1,html:`<div class="sub" style="opacity:.75;font-size:16px;margin:0">พี่หญิงที่สอนงานคุณวันนี้…</div>
+      <div class="pic" style="width:min(250px,66vw)">${revealYingArt()}<img class="real" src="img/ying.jpg" alt="พี่หญิง เจ้าหน้าที่พิพิธภัณฑ์"><span class="realtag">ภาพจริง · พี่หญิง</span></div>
+      <div class="quote">รอยยิ้มของเด็กๆ ที่มานี่แหละ<br>ทำให้พี่ยังมีแรงทำต่อ</div>
+      <div class="sub" style="margin-top:0">พี่หญิง · ดูแลเด็กๆ ที่นี่มา <b>20 ปี</b></div>`,real:1},
+    {html:`<div class="sub" style="opacity:.75;font-size:16px;margin:0">10 ปีต่อมา</div>
+      <div class="pic" style="aspect-ratio:4/3;width:min(330px,86vw)">${revealGrownArt()}<img class="real" src="img/group.jpg" alt="ทีมผู้สร้างเกมกับพี่หญิงในวันที่กลับมา"><span class="realtag">ภาพจริง · วันที่กลับมา</span></div>
+      <div class="cap">มิวกลับมาที่นี่อีกครั้ง<br>และ <em>พี่หญิงยังอยู่ที่เดิม</em></div>
+      <div class="sub" style="max-width:32ch;line-height:1.55">เรื่องนี้มาจากเรื่องจริง หนึ่งในทีมผู้สร้างเกมเคยมาที่นี่ตอนเด็กเมื่อ 10 ปีก่อน วันที่กลับมา พี่หญิงยังคอยดูแลเด็กๆ อยู่ตรงนี้</div>`,real:1},
+    {html:S.child?`<div class="cap" style="font-size:19px;opacity:.75">แล้วคุณล่ะ</div>
+      <div class="title" style="font-size:28px;max-width:13em">ตอนเด็ก ที่คุณวิ่งเข้าไปเล่น<br>ในที่แบบนี้</div>
+      <div class="cap">วันนั้น ก็มีพี่สักคน<br><em>เช็ดของเล่นให้คุณ</em> ก่อนคุณมาถึง</div><div class="sub">แค่คุณไม่เคยเห็นเขา</div>`
+     :`<div class="cap" style="font-size:19px;opacity:.75">แล้วคุณล่ะ</div>
+      <div class="title" style="font-size:28px;max-width:13em">ถึงจะจำไม่ได้แล้ว</div>
+      <div class="cap">ทุกที่ที่เด็กๆ ได้เล่นอย่างปลอดภัย<br><em>มีพี่สักคนเตรียมไว้ให้ก่อนเสมอ</em></div><div class="sub">รวมถึงวันที่คุณยังเด็กด้วย</div>`}
+  ];
+  let i=0,busy=false;const wrap=el('div',{style:'position:absolute;inset:0'});sc.appendChild(wrap);
+  const tap=el('div',{class:'tapnext'},'แตะเพื่อดูต่อ');sc.appendChild(tap);
+  const dotsW=el('div',{style:'position:absolute;top:calc(env(safe-area-inset-top,0px) + 22px);left:0;right:0;display:flex;gap:6px;justify-content:center;z-index:5'});
+  cards.forEach(()=>dotsW.appendChild(el('b',{style:'width:22px;height:5px;border-radius:5px;background:rgba(46,42,59,.18);display:block'})));sc.appendChild(dotsW);
+  async function show(){
+    busy=true;const cd=cards[i];
+    if(cd.pause){wrap.innerHTML='';tap.style.opacity=0;musicTo(0,1);await sleep(2200);setMood('night');musicTo(.5,3);tap.style.opacity=''}
+    const c=el('div',{class:'rcard',style:'opacity:0;transform:translateY(16px);transition:all .7s ease'},cd.html);wrap.innerHTML='';wrap.appendChild(c);
+    [...dotsW.children].forEach((d,k)=>d.style.background=k<=i?'#2E2A3B':'rgba(46,42,59,.18)');
+    requestAnimationFrame(()=>{c.style.opacity=1;c.style.transform='none'});
+    if(i===0)musicTo(.5,2);
+    SFX.sparkle();
+    if(cd.real){await sleep(1500);c.querySelectorAll('.real,.realtag').forEach(x=>x.classList.add('in'));SFX.chime();buzz(10);await sleep(1600)}
+    else if(cd.note){await sleep(1200);const n=$('#mn',c);if(n){n.classList.add('in');SFX.chime();buzz([10,60,10])}await sleep(500)}
+    else{SFX.chime();await sleep(900)}
+    busy=false;
+  }
+  show();
+  sc.addEventListener('pointerup',()=>{if(busy)return;i++;if(i>=cards.length){go(sceneFinal);return}SFX.pop(i*2);show()});
+}
+
+/* ============== SCENE 11: final ============== */
+function sceneFinal(sc){
+  sc.style.background='var(--paper)';
+  const ph=[['building','ศูนย์การเรียนรู้ฯ',2,4,-5],['ying','พี่หญิง · 20 ปี',50,0,4],['hall','ลานกิจกรรม',0,150,3],['playland','Kids Happy Land',52,166,-4]];
+  sc.innerHTML=`<div class="final">
+    <div style="font-size:13px;font-weight:600;letter-spacing:.08em;opacity:.6">เรื่องจริง ที่เกิดขึ้นทุกวัน</div>
+    <h2 class="title" style="font-size:32px">พี่ๆ เจ้าหน้าที่<br>ทำแบบนี้ทุกวัน</h2>
+    <div class="wall">${ph.map(([f,c,x,y,r])=>`<div class="polaroid" style="left:${x}%;top:${y}px;transform:rotate(${r}deg)"><img src="img/${f}.jpg" alt="${c}"><span>${c}</span></div>`).join('')}</div>
+    <p style="font-size:17px">เช็ดของเล่นก่อนใครตื่น ตรวจทุกซอกมุมก่อนใครเห็น<br>ดูแลเด็กที่ไม่รู้จักเหมือนน้องของตัวเอง<br>แล้วเก็บทุกอย่างคืนที่เดิมหลังทุกคนกลับบ้าน</p>
+    <p style="font-family:var(--f-display);font-size:20px;font-weight:600">ความสุขที่เด็กๆ ได้รับ<br>มีคนตั้งใจส่งต่อมาให้เสมอ</p>
+    <p style="font-size:16px;background:#fff;border:2.5px solid var(--ink);border-radius:16px;padding:12px 16px;box-shadow:3px 4px 0 var(--ink)">ครั้งหน้าที่ไปพิพิธภัณฑ์ ห้องสมุด<br>หรือ<span style="white-space:nowrap">สวนสนุก</span> ลองพูดคำว่า <b>“ขอบคุณครับ/ค่ะ”</b> กับพี่สักคน<br><span style="opacity:.7">เขาอาจยังไม่ได้ยินคำนี้เลยทั้งวัน</span></p>
+    <div style="display:flex;flex-direction:column;gap:12px;align-items:center;width:100%">
+      <button class="btn" id="thank">เขียนคำขอบคุณถึงพี่ๆ</button>
+      <div class="board" id="board"></div>
+      <button class="btn alt" id="again">เล่นอีกครั้ง</button>
+    </div>
+    <div class="credit">ภาพถ่ายจริงจาก ศูนย์การเรียนรู้สำหรับครอบครัว (Bangkok Family Center)<br>พี่หญิงเป็นบุคคลจริง ใช้ภาพและคำพูดโดยได้รับอนุญาต · น้องมิวและเหตุการณ์ในเกมเป็นเรื่องสมมติ</div>
+  </div>
+  <div class="modal" id="modal"><form class="sheet" id="form">
+    <div class="title" style="font-size:22px">ถึงพี่ๆ เจ้าหน้าที่</div>
+    <label for="msg" style="font-size:14px;opacity:.7">เขียนสั้นๆ จากใจ แคปหน้าจอเก็บไว้ หรือเอาไปบอกพี่ๆ ด้วยตัวเอง</label>
+    <textarea id="msg" maxlength="140" placeholder="ขอบคุณที่…"></textarea>
+    <div style="display:flex;gap:10px;justify-content:flex-end"><button type="button" class="btn alt" id="cancel">ยกเลิก</button><button type="submit" class="btn">แปะบนบอร์ด</button></div>
+  </form></div>`;
+  const modal=$('#modal',sc);
+  $('#thank',sc).addEventListener('click',()=>{modal.classList.add('on');SFX.pop();setTimeout(()=>$('#msg',sc).focus(),350)});
+  $('#cancel',sc).addEventListener('click',()=>modal.classList.remove('on'));
+  $('#form',sc).addEventListener('submit',e=>{e.preventDefault();const v=$('#msg',sc).value.trim();if(!v){$('#msg',sc).focus();return}
+    modal.classList.remove('on');const n=el('div',{class:'mini'});n.textContent=v+(S.name?` — ${S.name}`:'');
+    n.style.transform=`rotate(${rnd(-4,4)}deg)`;$('#board',sc).appendChild(n);$('#msg',sc).value='';SFX.win();buzz([10,40,10]);
+    const r=n.getBoundingClientRect(),s=sc.getBoundingClientRect();
+    for(let k=0;k<10;k++){const h=el('div',{class:'heart',style:`left:${r.left-s.left+r.width/2+rnd(-30,30)}px;top:${r.top-s.top}px;--dx:${rnd(-60,60)}px;--r:${rnd(-40,40)}deg;animation-delay:${k*60}ms`},
+      `<svg width="26" height="24" viewBox="0 0 26 24"><path d="M13 22 C4 15 1 10 1 6.5 A5.5 5.5 0 0 1 13 4 A5.5 5.5 0 0 1 25 6.5 C25 10 22 15 13 22Z" fill="${[C.pink,C.red,C.yellow][k%3]}" stroke="#2E2A3B" stroke-width="2"/></svg>`);sc.appendChild(h);setTimeout(()=>h.remove(),1800)}
+    $('#thank',sc).textContent='เขียนอีกใบ'});
+  $('#again',sc).addEventListener('click',()=>{S.drawing=null;setMood('day');musicTo(.55,1);go(sceneTitle)});
+}
+
+go(sceneTitle);
+})();
+</script>
+</body>
+</html>
