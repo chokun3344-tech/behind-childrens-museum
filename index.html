@@ -565,10 +565,10 @@ function sceneMeetYing(sc){
 
 /* ============== morning narration ============== */
 async function sceneMorning(sc){
-  hud.classList.remove('hide');setClock('07:30');setDots(0);
+  hud.classList.remove('hide');setClock('08:30');setDots(0);
   sc.style.background='#FFF6E3';
   sc.innerHTML=`<div style="position:absolute;inset:0;opacity:.9"><svg class="art" viewBox="0 0 390 700" preserveAspectRatio="xMidYMid slice"><g filter="url(#wob)">${ballPit(390,700,470,3,70)}</g></svg></div>
-   <div class="narr"><div class="time">07:30</div>
+   <div class="narr"><div class="time">08:30</div>
    <div class="line" id="l1">${L('พิพิธภัณฑ์ยังเงียบ','The museum is still quiet')}</div>
    <div class="line" id="l2">${L('อีกชั่วโมงครึ่ง เด็กๆ จะวิ่งเข้ามา<br>ทุกอย่างต้องพร้อมก่อนนั้น','In an hour and a half, the kids will run in.<br>Everything has to be ready by then.')}</div></div>`;
   sc.appendChild(tapNext());
@@ -578,7 +578,7 @@ async function sceneMorning(sc){
 
 /* ============== wipe balls ============== */
 function sceneWipe(sc){
-  setClock('07:40');
+  setClock('08:40');
   sc.style.background='#FFF6E3';
   sc.innerHTML=`<div style="position:absolute;inset:0"><svg class="art" viewBox="0 0 390 760" preserveAspectRatio="xMidYMax slice">
       <rect width="390" height="760" fill="#DCE6EE"/><rect y="0" width="390" height="40" fill="#C9D3DC"/>
@@ -690,7 +690,7 @@ function playArea(){
   </svg>`;
 }
 function sceneSafety(sc){
-  setClock('08:15');
+  setClock('09:15');
   sc.style.background='#E3E8EC';
   sc.innerHTML=`<div style="position:absolute;inset:0;touch-action:manipulation">${playArea()}</div>
    <div class="task"><span class="tag">${L('ก่อนเปิด','Before opening')}</span><p>${L('ตรวจความปลอดภัย','Safety check')}<small>${L('แตะจุดที่อาจทำให้เด็กเจ็บ','Tap anything that could hurt a child')}</small></p><span class="count" id="cnt">0/3</span></div>`;
@@ -730,7 +730,7 @@ function sceneSafety(sc){
 
 /* ============== doors open ============== */
 async function sceneOpen(sc){
-  setClock('09:00');setDots(1);SFX.chime();setMood('play');
+  setClock('10:00');setDots(1);SFX.chime();setMood('play');
   sc.style.background=C.yellow;
   let kids='';const kc=[C.pink,C.blue,C.green,C.orange,C.purple,C.red,C.teal];
   for(let i=0;i<9;i++){const x=20+i*42,s=.75+(i%3)*.15;kids+=`<g style="animation:bob ${.45+(i%4)*.08}s ease-in-out ${i*.07}s infinite;transform-box:fill-box"><g transform="translate(${x} ${470-(i%3)*18}) scale(${s})">
@@ -745,7 +745,7 @@ async function sceneOpen(sc){
     <rect x="-10" y="440" width="410" height="220" fill="#7FC36F" class="ink"/>
     <path d="M-10 520 Q195 470 400 520" stroke="#2E66B5" stroke-width="40" fill="none"/>
     <g id="kids" style="opacity:0;transition:opacity .6s">${kids}</g></g></svg>
-   <div class="narr" style="justify-content:flex-start;padding-top:calc(env(safe-area-inset-top,0px) + 90px)"><div class="time">09:00</div><div class="line in">${L('ประตูเปิดแล้ว!','The doors are open!')}</div></div>`;
+   <div class="narr" style="justify-content:flex-start;padding-top:calc(env(safe-area-inset-top,0px) + 90px)"><div class="time">10:00</div><div class="line in">${L('ประตูเปิดแล้ว!','The doors are open!')}</div></div>`;
   await sleep(500);$('#dl',sc).style.transform='scaleX(.12)';$('#dr',sc).style.transform='scaleX(.12)';
   await sleep(700);$('#kids',sc).style.opacity=1;
   for(let i=0;i<6;i++)setTimeout(()=>SFX.pop(i*2+3),i*120);
@@ -757,7 +757,7 @@ function crayonSVG(col){return `<svg viewBox="0 0 42 118"><path d="M9 30 L21 4 L
   <rect x="8" y="30" width="26" height="82" rx="4" fill="${col}" stroke="#2E2A3B" stroke-width="2.6"/><rect x="8" y="46" width="26" height="40" fill="#fff" opacity=".85" stroke="#2E2A3B" stroke-width="2"/>
   <path d="M13 56 h16 M13 66 h12 M13 76 h14" stroke="${col}" stroke-width="3" stroke-linecap="round"/></svg>`}
 function sceneMew(sc){
-  setClock('10:20');setMood('tired');
+  setClock('11:20');setMood('tired');
   sc.style.background='#FDEBD3';
   sc.innerHTML=`<svg class="art" id="mewArt" viewBox="0 0 390 700" preserveAspectRatio="xMidYMid slice">
     <rect width="390" height="700" fill="#F7D9B5"/>
@@ -814,7 +814,7 @@ function sceneMew(sc){
 
 /* ============== color together ============== */
 function sceneDraw(sc){
-  setClock('10:30');setMood('play');
+  setClock('11:30');setMood('play');
   sc.style.background='#2F7D5A';
   sc.innerHTML=`<div class="task"><span class="tag">${L('ระหว่างวัน','During the day')}</span><p>${L('ระบายสีภาพกับน้องมิว','Color the picture with Mew')}<small>${L('ภาพนี้น้องจะเอาไปให้แม่','She\'s giving it to her mom')}</small></p></div>
     <div style="position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 150px);bottom:calc(env(safe-area-inset-bottom,0px) + 120px);display:flex;align-items:center;justify-content:center;padding:0 22px">
@@ -865,9 +865,9 @@ function sceneDraw(sc){
 
 /* ============== closing narration ============== */
 async function sceneDusk(sc){
-  setClock('16:30');setDots(2);setMood('tired');
+  setClock('16:00');setDots(2);setMood('tired');
   sc.style.background='linear-gradient(#F2A36B,#E9785A 60%,#B9586A)';
-  sc.innerHTML=`<div class="narr" style="color:#fff"><div class="time">16:30</div>
+  sc.innerHTML=`<div class="narr" style="color:#fff"><div class="time">16:00</div>
    <div class="line" id="l1">${L('เด็กคนสุดท้ายโบกมือลา','The last child waves goodbye')}</div>
    <div class="line" id="l2" style="font-size:18px;opacity:.9">${L('ห้องที่เคยเต็มไปด้วยเสียงหัวเราะ<br>เหลือแต่ของเล่นกระจายเต็มพื้น','The room that was full of laughter<br>is now just toys scattered everywhere')}</div></div>`;
   const tn=tapNext();tn.style.color='#fff';sc.appendChild(tn);
@@ -887,7 +887,7 @@ function sceneTiredYing(sc){
 
 /* ============== tidy up balls (fixed drag) ============== */
 function sceneTidy(sc){
-  setClock('16:45');setMood('tired');
+  setClock('16:15');setMood('tired');
   sc.style.background='#3B3358';
   let stools='';[[40,250,C.yellow],[90,236,C.blue],[300,240,C.green],[350,256,C.pink],[250,228,'#9AA3AE']].forEach(([x,y,c])=>{
     stools+=`<g><path d="M${x-18} ${y} v26 a18 7 0 0 0 36 0 v-26" fill="${c}" class="ink2"/><ellipse cx="${x}" cy="${y}" rx="18" ry="7" fill="${c}" class="ink2"/><ellipse cx="${x}" cy="${y}" rx="18" ry="7" fill="#fff" opacity=".25"/></g>`});
@@ -938,14 +938,14 @@ function sceneTidy(sc){
   function land(g){g.remove();const k=document.createElementNS(NS,'g');const bx=-52+(got%5)*26,by=-34-Math.floor(got/5)*14;
     k.innerHTML=ballMarkup(bx,by,15,g.dataset.c);inB.appendChild(k);k.animate([{transform:'translateY(-14px)'},{transform:'translateY(0)'}],{duration:260,easing:'cubic-bezier(.3,1.6,.5,1)'});
     SFX.plop(got);buzz(10);got++;$('#cnt',sc).textContent=got+'/'+pos.length;dim.setAttribute('opacity',(got/pos.length*.45).toFixed(2));
-    if(got===4)coach(sc,L('ยืนมาเก้าชั่วโมงแล้วเนอะ… พี่ทำงานที่นี่มา 20 ปี ก็ยังเหนื่อยทุกวันแหละ','Nine hours on our feet… I\'ve worked here 20 years and I still get tired every day.'),4800,'top');
+    if(got===4)coach(sc,L('ยืนมาตั้งแต่เช้าแล้วเนอะ… พี่ทำงานที่นี่มา 20 ปี ก็ยังเหนื่อยทุกวันแหละ','On our feet since this morning… I\'ve worked here 20 years and I still get tired every day.'),4800,'top');
     if(got===pos.length){skip.remove();setTimeout(lightsOut,800)}}
   setTimeout(()=>coach(sc,L('เก็บให้ครบนะ พรุ่งนี้เช้าเด็กๆ จะได้เจอของพร้อม','Let\'s get them all, so the kids find everything ready tomorrow.'),4200,'top'),4800);
   const hand=el('div',{class:'hand'},HAND);sc.appendChild(hand);
   requestAnimationFrame(()=>{const s=sc.getBoundingClientRect(),p1=svg.createSVGPoint();p1.x=230;p1.y=400;const a=p1.matrixTransform(svg.getScreenCTM());p1.x=BX;p1.y=BY;const b=p1.matrixTransform(svg.getScreenCTM());
     hand.animate([{left:a.x-s.left-14+'px',top:a.y-s.top+'px',opacity:0},{opacity:1,offset:.15},{left:b.x-s.left-14+'px',top:b.y-s.top+'px',opacity:1,offset:.8},{left:b.x-s.left-14+'px',top:b.y-s.top+'px',opacity:0}],{duration:1600,iterations:3});setTimeout(()=>hand.remove(),4800)});
   async function lightsOut(){
-    SFX.click();dim.style.transition='opacity 1.2s';dim.setAttribute('opacity','.86');setClock('17:30',true);
+    SFX.click();dim.style.transition='opacity 1.2s';dim.setAttribute('opacity','.86');setClock('17:00',true);
     const tk=$('.task',sc);if(tk)tk.style.opacity=0;await sleep(900);
     const o=el('div',{class:'narr',style:'color:#fff'},`<div class="line" id="q1" style="font-size:26px">${L('ไม่มีใครเห็น','Nobody saw')}</div><div class="line" id="q2" style="font-size:19px;opacity:.85">${L('ไม่มีใครปรบมือ<br>วันนี้ก็เหมือนทุกวัน','Nobody clapped<br>Just like every other day')}</div>`);
     sc.appendChild(o);await sleep(200);$('#q1',o).classList.add('in');await sleep(1600);$('#q2',o).classList.add('in');await sleep(2600);
