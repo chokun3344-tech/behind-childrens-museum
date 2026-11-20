@@ -349,11 +349,14 @@ function sparks(scene,x,y,n=12,colors=[C.yellow,C.pink,C.teal,C.blue]){
     scene.appendChild(s);setTimeout(()=>s.remove(),800)}}
 function relPos(scene,x,y){const r=scene.getBoundingClientRect();return[x-r.left,y-r.top]}
 let current=null;
+let goBusy=false;
 async function go(fn){
-  if(current){const old=current;old.classList.remove('on');setTimeout(()=>old.remove(),650);await sleep(350)}
+  if(goBusy)return;goBusy=true;
+  [...stage.children].forEach(o=>{o.classList.remove('on');o.style.pointerEvents='none';setTimeout(()=>o.remove(),650)});
+  if(current)await sleep(350);
   const sc=el('div',{class:'scene'});stage.appendChild(sc);current=sc;
   requestAnimationFrame(()=>requestAnimationFrame(()=>sc.classList.add('on')));
-  fn(sc);
+  goBusy=false;fn(sc);
 }
 function skipBtn(sc,cb){const b=el('button',{class:'skip'},L('ข้าม ›','Skip ›'));b.addEventListener('click',e=>{e.stopPropagation();b.remove();cb()},{once:true});sc.appendChild(b);return b}
 function waitTap(sc){return new Promise(r=>{const h=()=>{sc.removeEventListener('pointerup',h);r()};setTimeout(()=>sc.addEventListener('pointerup',h),400)})}
@@ -633,8 +636,8 @@ function sceneWipe(sc){
     finish();
   }
   async function finish(){
-    skip.remove();
-    const o=el('div',{class:'narr',style:'background:rgba(255,246,227,.94);opacity:0;transition:opacity .5s'},
+    skip.remove();done=true;squeakStop();cloth.remove();if(hand.isConnected){clearInterval(hint);hand.remove()}const cch=sc.querySelector('.coach');if(cch)cch.remove();
+    const o=el('div',{class:'narr',style:'background:rgba(255,246,227,.94);opacity:0;transition:opacity .5s;z-index:28'},
       `<div class="title" style="font-size:52px;font-variant-numeric:tabular-nums">2 <span style="font-size:22px">${L('จาก','of')}</span> 1,200</div>
        <div class="line in">${L('บ่อบอลมีลูกบอลราวพันกว่าลูก<br>พี่ๆ ผลัดกันเช็ดทุกลูก ทุกเช้า','The ball pit holds over a thousand balls.<br>The staff take turns wiping every one, every morning.')}</div>
        <div class="line in" style="font-size:17px;opacity:.75">${L('ไม่มีใครเห็นตอนพี่เช็ด<br>แต่เด็กทุกคนได้เล่นของที่สะอาด','Nobody sees them do it.<br>But every child gets to play with something clean.')}</div>`);
